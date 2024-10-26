@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>serkankose77.me</title>
+    <style>
+        /* Reset margins and paddings */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Set the background color and font properties */
+        body {
+            background: black;
+            color: #0F0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Courier New', Courier, monospace;
+            position: relative;
+            /* Establish a positioning context for the overlay */
+        }
+
+        /* Canvas covers the entire viewport */
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            /* Ensure the canvas is behind the overlay */
+        }
+
+        /* Overlay for the welcome message and time display */
+        .overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0F0;
+            font-size: 48px;
+            text-align: center;
+            z-index: 2;
+            /* Ensure the overlay is above the canvas */
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.7), 0 0 20px rgba(0, 255, 0, 0.7);
+            pointer-events: none;
+            /* Allow clicks to pass through the overlay */
+        }
+
+        /* Styling for the time display */
+        .time-display {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: normal;
+            color: #00FF00;
+            /* Brighter green */
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.9), 0 0 10px rgba(0, 255, 0, 0.9);
+        }
+
+
+        /* Responsive font sizes for smaller screens */
+        @media (max-width: 768px) {
+            .overlay {
+                font-size: 32px;
+            }
+
+            .time-display {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .overlay {
+                font-size: 24px;
+            }
+
+            .time-display {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Canvas Element for Matrix Effect -->
+    <canvas id="matrixCanvas"></canvas>
+
+    <!-- Overlay Element for Welcome Message and Time Display -->
+    <div class="overlay">
+        Welcome to serkankose77.me
+        <div class="time-display" id="timeDisplay">Loading time...</div>
+    </div>
+
+    <script>
+        // Get the canvas element and its context
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set the canvas to full screen
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Characters to be used in the Matrix effect
+        const matrixChars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%^&*()*&^%+-/~{[|`]}';
+
+        // Convert the string into an array of single characters
+        const chars = matrixChars.split('');
+
+        const fontSize = 20;
+        let columns = canvas.width / fontSize; // Number of columns for the rain
+
+        // Array of drops - one per column
+        // Array of drops - one per column with speed
+        let drops = [];
+
+        function initializeDrops() {
+            columns = canvas.width / fontSize;
+            drops = [];
+            for (let x = 0; x < columns; x++) {
+                drops[x] = {
+                    y: Math.random() * canvas.height / fontSize,
+                    speed: Math.random() * 1 + 0.5 // Random speed between 0.5 and 1.5
+                };
+            }
+        }
+
+        initializeDrops();
+
+        // Draw the characters
+        function drawMatrix() {
+            // Black background with opacity to create fading effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Set the color to green for the characters
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+
+            // Loop over drops
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                const x = i * fontSize;
+                const y = drops[i].y * fontSize;
+
+                ctx.fillText(text, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i].y = 0;
+                    drops[i].speed = Math.random() * 1 + 0.5; // Assign new speed
+                }
+
+                drops[i].y += drops[i].speed; // Increment by individual speed
+            }
+        }
+
+        // Loop the animation using requestAnimationFrame for better performance
+        function animate() {
+            drawMatrix();
+            requestAnimationFrame(animate);
+        }
+
+        animate(); // Start the animation loop
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initializeDrops(); // Reinitialize drops on resize to prevent glitches
+        });
+
+        function updateTime() {
+            const timeDisplay = document.getElementById('timeDisplay');
+            const now = new Date();
+
+            // Format the time as HH:MM:SS AM/PM
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const strTime = `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
+
+            // Format the date as Weekday, Month Day, Year
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const strDate = now.toLocaleDateString(undefined, options);
+
+            timeDisplay.textContent = `${strDate} - ${strTime}`;
+        }
+
+        // Helper function to pad single digit numbers with a leading zero
+        function padZero(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+        // Update time immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        window.addEventListener('resize', debounce(() => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initializeDrops();
+        }, 200));
+
+    </script>
+</body>
+
+</html>
