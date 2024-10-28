@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to serkankose77.me</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background-color: black;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #overlay h1 {
+            font-size: 48px;
+            margin: 0;
+        }
+
+        #overlay p {
+            font-size: 24px;
+            margin: 0;
+        }
+    </style>
+    <!-- Include Three.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body>
+    <div id="overlay">
+        <h1>Welcome to serkankose77.me</h1>
+        <p id="datetime"></p>
+    </div>
+    <script>
+        // Set up scene, camera, and renderer
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5000);
+        camera.position.z = 1000;
+
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add lights
+        var ambientLight = new THREE.AmbientLight(0x222222);
+        scene.add(ambientLight);
+
+        var pointLight = new THREE.PointLight(0xffffff, 1);
+        camera.add(pointLight);
+        scene.add(camera);
+
+        // Create particle geometry
+        var particleCount = 2000;
+        var geometry = new THREE.BufferGeometry();
+        var positions = [];
+        var colors = [];
+        var sizes = [];
+
+        var color = new THREE.Color();
+
+        for (var i = 0; i < particleCount; i++) {
+            // Positions
+            positions.push((Math.random() * 2 - 1) * 1000);
+            positions.push((Math.random() * 2 - 1) * 1000);
+            positions.push((Math.random() * 2 - 1) * 1000);
+
+            // Colors
+            color.setHSL(Math.random(), 0.7, 0.5);
+            colors.push(color.r, color.g, color.b);
+
+            // Sizes
+            sizes.push(20);
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+        // Create shader material
+        var material = new THREE.ShaderMaterial({
+            uniforms: {
+                color: { value: new THREE.Color(0xffffff) },
+                pointTexture: { value: new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/spark1.png') }
+            },
+            vertexShader: `
+            attribute float size;
+            attribute vec3 customColor;
+            varying vec3 vColor;
+            void main() {
+                vColor = customColor;
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = size * (300.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+            fragmentShader: `
+            uniform vec3 color;
+            uniform sampler2D pointTexture;
+            varying vec3 vColor;
+            void main() {
+                gl_FragColor = vec4(color * vColor, 1.0);
+                gl_FragColor = gl_FragColor * texture2D(pointTexture, gl_PointCoord);
+                if (gl_FragColor.a < 0.1) discard;
+            }
+        `,
+            blending: THREE.AdditiveBlending,
+            depthTest: false,
+            transparent: true
+        });
+
+        // Create particle system
+        var particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+
+        // Animation variables
+        var clock = new THREE.Clock();
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            var time = clock.getElapsedTime();
+
+            particleSystem.rotation.y = time * 0.1;
+            particleSystem.rotation.x = time * 0.05;
+
+            var sizes = geometry.attributes.size.array;
+
+            for (var i = 0; i < particleCount; i++) {
+                sizes[i] = 20 + 10 * Math.sin((i + time * 5) * 0.3);
+            }
+
+            geometry.attributes.size.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Update date and time
+        function updateTime() {
+            var now = new Date();
+            var datetimeString = now.toLocaleString();
+            document.getElementById('datetime').textContent = datetimeString;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+
+</html>
