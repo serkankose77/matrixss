@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to serkankose77.me</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background-color: black;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #overlay h1 {
+            font-size: 48px;
+            margin: 0;
+        }
+
+        #overlay p {
+            font-size: 24px;
+            margin: 0;
+        }
+    </style>
+    <!-- Include Three.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+</head>
+
+<body>
+    <div id="overlay">
+        <h1>Welcome to serkankose77.me</h1>
+        <p id="datetime"></p>
+    </div>
+    <script>
+        // Set up scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Create a plane geometry with more subdivisions for finer detail
+        const geometry = new THREE.PlaneGeometry(20, 20, 512, 512);
+        const material = new THREE.MeshPhongMaterial({
+            vertexColors: true,
+            side: THREE.DoubleSide,
+            flatShading: false,
+            wireframe: false
+        });
+
+        // Assign vibrant colors to vertices for a more vibrant effect
+        const colors = [];
+        for (let i = 0; i < geometry.attributes.position.count; i++) {
+            colors.push(Math.random() * 0.5 + 0.5, Math.random() * 0.5, Math.random() * 0.5 + 0.5); // RGB values, darker tones with vibrant highlights
+        }
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        // Lighting to enhance the depth and darker, moody effect
+        const ambientLight = new THREE.AmbientLight(0x202020, 1.5); // Darker ambient light
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0xff6600, 1.5); // Warm orange light
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x0099ff, 1.5); // Cool blue light
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        const pointLight3 = new THREE.PointLight(0x9900cc, 1.2); // Deep purple light
+        pointLight3.position.set(0, 5, -5);
+        scene.add(pointLight3);
+
+        // Animate the geometry to create dynamic, flowing motion
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = performance.now() * 0.001;
+            const positionAttribute = geometry.attributes.position;
+            for (let i = 0; i < positionAttribute.count; i++) {
+                const x = positionAttribute.getX(i);
+                const y = positionAttribute.getY(i);
+
+                const waveZ = 0.9 * Math.sin(x * 3.0 + time) * Math.cos(y * 3.0 + time);
+                positionAttribute.setZ(i, waveZ);
+            }
+            positionAttribute.needsUpdate = true;
+
+            mesh.rotation.z += 0.001;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Update date and time in 24-hour format
+        function updateTime() {
+            const now = new Date();
+            const options = {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+            };
+            const datetimeString = now.toLocaleString('en-GB', options);
+            document.getElementById('datetime').textContent = datetimeString;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+
+</html>
