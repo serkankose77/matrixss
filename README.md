@@ -1,1 +1,1 @@
-A simple home page displaying time and date in front of a classic matrix screen
+A set of simple home pages displaying time and date in front of random backgrounds
