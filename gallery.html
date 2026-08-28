@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>serkankose77.me — gallery</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: #14141c;
+            --ink: #e8e6df;
+            --dim: #8a8894;
+            --accent: #7dd3a0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh;
+            padding: 32px 24px 48px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        header h1 {
+            font-size: clamp(20px, 3vw, 30px);
+            letter-spacing: 0.35em;
+            font-weight: 600;
+        }
+
+        header p {
+            color: var(--dim);
+            margin-top: 8px;
+            font-size: 13px;
+            letter-spacing: 0.15em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid #23232e;
+            border-radius: 10px;
+            overflow: hidden;
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            transition: transform .18s ease, border-color .18s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+        }
+
+        .thumb {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* Render each page in a full-size iframe, scaled down to tile size */
+        .thumb iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1280px;
+            height: 720px;
+            border: 0;
+            transform-origin: top left;
+            pointer-events: none;
+        }
+
+        .label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+
+        .label .num {
+            color: var(--accent);
+        }
+
+        .label .name {
+            color: var(--dim);
+            letter-spacing: 0.08em;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>SERKANKOSE77.ME</h1>
+        <p>landing page collection · click a tile to open full screen</p>
+    </header>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        const pages = [
+            ["index1.html", "matrix digital rain"],
+            ["index2.html", "synthwave '84"],
+            ["index3.html", "hyperspace warp"],
+            ["index4.html", "aurora borealis"],
+            ["index5.html", "terminal boot"],
+            ["index6.html", "deep ocean abyss"],
+            ["index7.html", "spiral galaxy"],
+            ["index8.html", "rain on glass"],
+            ["index9.html", "firefly forest"],
+            ["index10.html", "liquid plasma"],
+            ["index11.html", "carta caelestis"],
+            ["index12.html", "vhs glitch"]
+        ];
+
+        const grid = document.getElementById("grid");
+        for (const [file, name] of pages) {
+            const a = document.createElement("a");
+            a.className = "card";
+            a.href = file;
+            a.target = "_blank";
+            a.innerHTML =
+                '<div class="thumb"><iframe loading="lazy" src="' + file + '" title="' + name + '"></iframe></div>' +
+                '<div class="label"><span class="num">' + file.replace(".html", "") + '</span><span class="name">' + name + '</span></div>';
+            grid.appendChild(a);
+        }
+
+        // Scale each 1280x720 iframe to its tile width
+        function rescale() {
+            document.querySelectorAll(".thumb").forEach(t => {
+                const f = t.querySelector("iframe");
+                f.style.transform = "scale(" + (t.clientWidth / 1280) + ")";
+            });
+        }
+        window.addEventListener("resize", rescale);
+        // Rescale once layout settles
+        requestAnimationFrame(rescale);
+        setTimeout(rescale, 300);
+    </script>
+</body>
+
+</html>
