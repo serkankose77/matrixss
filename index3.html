@@ -1,175 +1,458 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Welcome to serkankose77.me</title>
-    <style>
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            height: 100%;
-            width: 100%;
-            background-color: black;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#030308">
+<title>Hyperspace Transit · serkankose77.me</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#030308;
+  --ice:#cfe6ff;
+  --ice2:#7fb8ff;
+  --deep:#4a7dd6;
+  --amber:#ffcb92;
+  --txt:#e9f3ff;
+  --dim:rgba(178,212,255,.55);
+  --faint:rgba(150,190,255,.26);
+  --disp:'Orbitron','Avenir Next','Trebuchet MS',sans-serif;
+  --mono:'Share Tech Mono','SF Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  background:#030308;
+  background-image:
+    radial-gradient(120% 90% at 30% 20%, rgba(38,62,120,.35), transparent 60%),
+    radial-gradient(100% 80% at 72% 78%, rgba(52,96,160,.22), transparent 55%);
+  color:var(--txt);
+  font-family:var(--mono);
+  cursor:crosshair;
+  -webkit-font-smoothing:antialiased;
+}
+canvas{position:fixed;inset:0;display:block}
+#neb{z-index:0}
+#sky{z-index:1}
+.grain{
+  position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.vignette{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(115% 95% at 50% 46%, transparent 46%, rgba(1,2,8,.62) 100%);
+}
+.ui{position:fixed;inset:0;z-index:4;pointer-events:none;display:grid;place-items:center;user-select:none;-webkit-user-select:none}
+.core{display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;padding:0 18px}
 
-        #overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            z-index: 1;
-            pointer-events: none;
-        }
+.eyebrow{
+  display:flex;align-items:center;gap:14px;
+  font-size:clamp(.55rem,1.15vw,.72rem);letter-spacing:.52em;text-indent:.52em;
+  color:var(--ice2);text-transform:uppercase;
+  animation:rise 1.2s cubic-bezier(.16,1,.3,1) .7s both;
+}
+.eyebrow::before,.eyebrow::after{
+  content:'';height:1px;width:clamp(28px,5vw,64px);
+  background:linear-gradient(90deg,transparent,var(--faint));
+}
+.eyebrow::after{background:linear-gradient(90deg,var(--faint),transparent)}
 
-        #overlay h1 {
-            font-size: 48px;
-            margin: 0;
-        }
+.brandwrap{filter:drop-shadow(0 0 26px rgba(110,165,255,.28));margin-top:clamp(12px,2.2vh,22px)}
+.brand{
+  margin:0;font-family:var(--disp);font-weight:700;
+  font-size:clamp(1.55rem,6vw,4.4rem);
+  letter-spacing:.13em;text-indent:.13em;line-height:1.1;white-space:nowrap;
+  background:linear-gradient(110deg,
+    #b9d7fa 0%, #dcecff 34%, #f6fbff 46%, #ffffff 50%, #f6fbff 54%, #cfe4ff 66%, #b9d7fa 100%);
+  background-size:260% 100%;background-position:-80% 0;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:reveal 2s cubic-bezier(.16,1,.3,1) .25s both, glint 9s linear 4.2s infinite;
+}
+.brand .tld{font-weight:500;-webkit-text-fill-color:rgba(127,184,255,.9);color:rgba(127,184,255,.9)}
 
-        #overlay p {
-            font-size: 24px;
-            margin: 0;
-        }
-    </style>
-    <!-- Include Three.js library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+.rule{
+  width:clamp(180px,32vw,380px);height:9px;position:relative;margin-top:clamp(10px,2vh,18px);
+  animation:rise 1.2s cubic-bezier(.16,1,.3,1) 1s both;
+}
+.rule::before{content:'';position:absolute;left:0;right:0;top:4px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--faint) 20%,var(--faint) 80%,transparent)}
+.rule::after{content:'';position:absolute;left:50%;top:1.5px;width:6px;height:6px;
+  transform:translateX(-50%) rotate(45deg);
+  background:var(--bg);border:1px solid rgba(160,200,255,.5)}
+
+.clock{
+  margin-top:clamp(12px,2.4vh,24px);
+  font-size:clamp(1.35rem,3.4vw,2.25rem);letter-spacing:.32em;text-indent:.32em;
+  color:#dcecff;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 14px rgba(130,185,255,.45);
+  animation:rise 1.2s cubic-bezier(.16,1,.3,1) 1.15s both;
+}
+.date{
+  margin-top:8px;font-size:clamp(.58rem,1.3vw,.76rem);
+  letter-spacing:.44em;text-indent:.44em;color:var(--dim);text-transform:uppercase;
+  animation:rise 1.2s cubic-bezier(.16,1,.3,1) 1.3s both;
+}
+.velrow{
+  margin-top:clamp(16px,3vh,28px);display:flex;align-items:center;gap:12px;
+  font-size:clamp(.56rem,1.1vw,.68rem);letter-spacing:.28em;color:var(--dim);
+  text-transform:uppercase;font-variant-numeric:tabular-nums;
+  animation:rise 1.2s cubic-bezier(.16,1,.3,1) 1.45s both;
+}
+.meter{width:clamp(110px,18vw,210px);height:4px;background:rgba(140,180,255,.13);position:relative;overflow:hidden}
+.meter i{position:absolute;inset:0;background:linear-gradient(90deg,var(--deep),var(--ice2) 55%,var(--amber));
+  transform-origin:0 50%;transform:scaleX(.14);will-change:transform}
+.meter::after{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0 6px,var(--bg) 6px 8px)}
+#vel{color:var(--ice);min-width:5ch;text-align:left;text-shadow:0 0 10px rgba(130,185,255,.35)}
+
+.hud{
+  position:fixed;z-index:4;pointer-events:none;color:var(--dim);
+  font-size:clamp(.5rem,1vw,.62rem);letter-spacing:.24em;text-transform:uppercase;
+  padding:14px 16px;animation:hfade 1.4s ease 1.8s both;
+}
+.hud::before{content:'';position:absolute;width:22px;height:22px;border:1px solid var(--faint)}
+.hud-tl{top:14px;left:14px}
+.hud-tl::before{top:0;left:0;border-right:0;border-bottom:0}
+.hud-tr{top:14px;right:14px;text-align:right}
+.hud-tr::before{top:0;right:0;border-left:0;border-bottom:0}
+.hud-bl{bottom:14px;left:14px}
+.hud-bl::before{bottom:0;left:0;border-right:0;border-top:0}
+.hud-br{bottom:14px;right:14px;text-align:right;font-variant-numeric:tabular-nums}
+.hud-br::before{bottom:0;right:0;border-left:0;border-top:0}
+#stat{transition:color .5s ease,text-shadow .5s ease}
+#stat.warp{color:var(--amber);text-shadow:0 0 12px rgba(255,190,120,.55)}
+
+@keyframes reveal{
+  from{opacity:0;letter-spacing:.34em;text-indent:.34em;filter:blur(12px);transform:scale(1.06)}
+  to{opacity:1;letter-spacing:.13em;text-indent:.13em;filter:blur(0);transform:scale(1)}
+}
+@keyframes glint{0%{background-position:-80% 0}4%{background-position:-80% 0}16%{background-position:180% 0}100%{background-position:180% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes hfade{from{opacity:0}to{opacity:1}}
+
+@media (max-width:640px){
+  .hud-tr,.hud-bl{display:none}
+  .hud{padding:10px 12px}
+}
+@media (prefers-reduced-motion: reduce){
+  .brand,.eyebrow,.rule,.clock,.date,.velrow,.hud{animation:none}
+}
+</style>
 </head>
-
 <body>
-    <div id="overlay">
-        <h1>Welcome to serkankose77.me</h1>
-        <p id="datetime"></p>
+<canvas id="neb"></canvas>
+<canvas id="sky"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+<main class="ui" aria-label="serkankose77.me — hyperspace transit console">
+  <div class="core">
+    <div class="eyebrow">Deep Field Transit</div>
+    <div class="brandwrap">
+      <h1 class="brand">serkankose77<span class="tld">.me</span></h1>
     </div>
-    <script>
-        // Set up scene, camera, and renderer
-        var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5000);
-        camera.position.z = 1000;
+    <div class="rule" aria-hidden="true"></div>
+    <time class="clock" id="clock">--:--:--</time>
+    <div class="date" id="date">&nbsp;</div>
+    <div class="velrow" aria-hidden="true">
+      <span>Vel</span>
+      <span class="meter"><i id="mfill"></i></span>
+      <span id="vel">0.42c</span>
+    </div>
+  </div>
+</main>
+<div class="hud hud-tl">SK-77 // Nav Console</div>
+<div class="hud hud-tr">Sector 07 · Lane K3</div>
+<div class="hud hud-bl"><span id="stat">Field · Stable</span></div>
+<div class="hud hud-br"><span id="coord">RA --:-- · DEC ---°</span></div>
 
-        var renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+<script>
+(function(){
+'use strict';
+var sky=document.getElementById('sky'), neb=document.getElementById('neb');
+var ctx=sky.getContext('2d'), nctx=neb.getContext('2d');
+if(!ctx||!nctx) return;
 
-        // Add lights
-        var ambientLight = new THREE.AmbientLight(0x222222);
-        scene.add(ambientLight);
+var RM=false;
+try{RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 
-        var pointLight = new THREE.PointLight(0xffffff, 1);
-        camera.add(pointLight);
-        scene.add(camera);
+var W=0,H=0,DPR=1,F=1;
+var stars=[], dust=null, dW=0, dH=0;
+var simT=0, last=0, raf=0, frame=0;
+var rot=0, cx=0, cy=0;
+var px=0, py=0, tx=0, ty=0;      /* pointer parallax */
+var mT=-99;                       /* manual warp trigger time */
+var lastVel='', lastMx=-1, lastWarp=false;
 
-        // Create particle geometry
-        var particleCount = 2000;
-        var geometry = new THREE.BufferGeometry();
-        var positions = [];
-        var colors = [];
-        var sizes = [];
+var clamp=function(v,a,b){return v<a?a:(v>b?b:v);};
+var sm=function(a,b,x){x=clamp((x-a)/(b-a),0,1);return x*x*(3-2*x);};
 
-        var color = new THREE.Color();
+/* ---------- nebula texture (pre-rendered fbm-ish blobs) ---------- */
+function blob(g,x,y,r,cr,cg,cb,a){
+  var rg=g.createRadialGradient(x,y,0,x,y,r);
+  rg.addColorStop(0,'rgba('+cr+','+cg+','+cb+','+a.toFixed(3)+')');
+  rg.addColorStop(1,'rgba('+cr+','+cg+','+cb+',0)');
+  g.fillStyle=rg;g.beginPath();g.arc(x,y,r,0,6.2832);g.fill();
+}
+function buildTex(){
+  var c=document.createElement('canvas');c.width=c.height=320;
+  var g=c.getContext('2d');
+  g.globalCompositeOperation='lighter';
+  var CL=[[.38,.42,.32,46,86,158,.15],[.63,.58,.27,64,122,196,.12],[.55,.33,.19,112,90,172,.09],[.43,.67,.14,205,152,96,.055]];
+  for(var i=0;i<CL.length;i++){
+    var q=CL[i];
+    blob(g,q[0]*320,q[1]*320,q[2]*320,q[3],q[4],q[5],q[6]);
+    var bx=q[0],by=q[1];
+    for(var j=0;j<26;j++){
+      bx=clamp(bx+(Math.random()-.5)*.15,.16,.84);
+      by=clamp(by+(Math.random()-.5)*.15,.16,.84);
+      blob(g,bx*320,by*320,(.03+Math.random()*.09)*320,q[3],q[4],q[5],q[6]*(.18+Math.random()*.3));
+    }
+  }
+  g.globalCompositeOperation='destination-in';
+  var m=g.createRadialGradient(160,160,40,160,160,160);
+  m.addColorStop(0,'rgba(0,0,0,1)');m.addColorStop(.72,'rgba(0,0,0,.8)');m.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=m;g.fillRect(0,0,320,320);
+  return c;
+}
+var TEX=buildTex();
+/* layer: [scale, rotSpd, oxSpd, oySpd, mirror, alpha] */
+var LAY=[[1.75,.006,.11,.09,1,.40],[1.45,-.004,.17,.13,-1,.30],[2.15,.0025,.07,.10,1,.22]];
 
-        for (var i = 0; i < particleCount; i++) {
-            // Positions
-            positions.push((Math.random() * 2 - 1) * 1000);
-            positions.push((Math.random() * 2 - 1) * 1000);
-            positions.push((Math.random() * 2 - 1) * 1000);
+/* ---------- distant static dust ---------- */
+function buildDust(){
+  dW=W+80; dH=H+80;
+  dust=document.createElement('canvas');
+  dust.width=Math.round(dW*DPR); dust.height=Math.round(dH*DPR);
+  var g=dust.getContext('2d');
+  g.setTransform(DPR,0,0,DPR,0,0);
+  var n=clamp(Math.round(dW*dH/9000),80,520);
+  for(var i=0;i<n;i++){
+    var r=Math.random();
+    var rad=r<.85?(.4+Math.random()*.5):(.9+Math.random()*.9);
+    var a=.12+Math.random()*.5;
+    var t=Math.random();
+    g.fillStyle=t<.7?'rgba(215,232,255,'+a.toFixed(2)+')'
+              : t<.9?'rgba(150,190,255,'+a.toFixed(2)+')'
+                    :'rgba(255,214,165,'+(a*.8).toFixed(2)+')';
+    g.beginPath();g.arc(Math.random()*dW,Math.random()*dH,rad,0,6.2832);g.fill();
+  }
+}
 
-            // Colors
-            color.setHSL(Math.random(), 0.7, 0.5);
-            colors.push(color.r, color.g, color.b);
+/* ---------- starfield ---------- */
+var COLS=['rgb(236,245,255)','rgb(214,232,255)','rgb(152,193,255)','rgb(116,158,255)','rgb(255,206,152)'];
+function pickCol(){
+  var r=Math.random();
+  return r<.42?COLS[0]:r<.66?COLS[1]:r<.84?COLS[2]:r<.93?COLS[3]:COLS[4];
+}
+function spawn(s,init){
+  s.z=init? .1+Math.random()*1.25 : 1.12+Math.random()*.22;
+  s.x=(Math.random()*2-1)*.6*W*s.z/F;
+  s.y=(Math.random()*2-1)*.6*H*s.z/F;
+  s.sp=.85+Math.random()*.45;
+  s.sz=.5+Math.random()*.8;
+  s.al=.55+Math.random()*.45;
+  s.col=pickCol();
+  s.lf=0;
+  s.nw=true;
+  s.px=0;s.py=0;
+}
+function starCount(){return clamp(Math.round(W*H/2600),150,760);}
+function resetStars(){
+  var n=starCount();
+  stars.length=0;
+  for(var i=0;i<n;i++){var s={};spawn(s,true);stars.push(s);}
+}
 
-            // Sizes
-            sizes.push(20);
-        }
+/* ---------- sizing ---------- */
+function size(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  sky.width=Math.round(W*DPR);sky.height=Math.round(H*DPR);
+  neb.width=Math.round(W*DPR);neb.height=Math.round(H*DPR);
+  sky.style.width=neb.style.width=W+'px';
+  sky.style.height=neb.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  nctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.lineCap='round';
+  F=Math.min(W,H)*.9;
+  buildDust();
+  resetStars();
+}
+var rsT=0;
+window.addEventListener('resize',function(){
+  clearTimeout(rsT);rsT=setTimeout(size,160);
+});
 
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
-        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+/* ---------- warp envelope ---------- */
+function envelope(){
+  if(RM) return 0;
+  var q=simT%12;
+  var pe=sm(6,7.7,q)*(1-sm(9,11.7,q));
+  var mq=simT-mT, me=0;
+  if(mq>=0&&mq<3.4) me=sm(0,.6,mq)*(1-sm(1.5,3.4,mq));
+  return Math.min(1,pe+me);
+}
 
-        // Create shader material
-        var material = new THREE.ShaderMaterial({
-            uniforms: {
-                color: { value: new THREE.Color(0xffffff) },
-                pointTexture: { value: new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/spark1.png') }
-            },
-            vertexShader: `
-            attribute float size;
-            attribute vec3 customColor;
-            varying vec3 vColor;
-            void main() {
-                vColor = customColor;
-                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                gl_PointSize = size * (300.0 / -mvPosition.z);
-                gl_Position = projectionMatrix * mvPosition;
-            }
-        `,
-            fragmentShader: `
-            uniform vec3 color;
-            uniform sampler2D pointTexture;
-            varying vec3 vColor;
-            void main() {
-                gl_FragColor = vec4(color * vColor, 1.0);
-                gl_FragColor = gl_FragColor * texture2D(pointTexture, gl_PointCoord);
-                if (gl_FragColor.a < 0.1) discard;
-            }
-        `,
-            blending: THREE.AdditiveBlending,
-            depthTest: false,
-            transparent: true
-        });
+/* ---------- frame ---------- */
+function drawNebula(t,e){
+  nctx.globalCompositeOperation='source-over';
+  nctx.fillStyle='#030308';
+  nctx.fillRect(0,0,W,H);
+  nctx.globalCompositeOperation='lighter';
+  for(var i=0;i<LAY.length;i++){
+    var L=LAY[i];
+    nctx.save();
+    nctx.translate(W/2+Math.sin(t*L[2])*W*.035, H/2+Math.cos(t*L[3])*H*.035);
+    nctx.rotate(t*L[1]);
+    var sc=Math.max(W,H)*L[0]/320;
+    nctx.scale(sc*L[4],sc);
+    nctx.globalAlpha=L[5];
+    nctx.drawImage(TEX,-160,-160);
+    nctx.restore();
+  }
+  nctx.globalAlpha=1;
+  /* distant dust, slow parallax wobble */
+  var dx=-40+Math.sin(t*.07)*14, dy=-40+Math.cos(t*.05)*10;
+  nctx.drawImage(dust,dx,dy,dW,dH);
+  /* core glow — blooms with warp */
+  var ga=.05+e*.3;
+  var gr=Math.min(W,H)*(.34+.28*e);
+  var rg=nctx.createRadialGradient(cx,cy,0,cx,cy,gr);
+  rg.addColorStop(0,'rgba(165,205,255,'+ga.toFixed(3)+')');
+  rg.addColorStop(1,'rgba(165,205,255,0)');
+  nctx.fillStyle=rg;
+  nctx.fillRect(0,0,W,H);
+}
 
-        // Create particle system
-        var particleSystem = new THREE.Points(geometry, material);
-        scene.add(particleSystem);
+function loop(now){
+  raf=requestAnimationFrame(loop);
+  var dt=Math.min((now-last)/1000,.05);
+  last=now;
+  simT+=dt;
+  frame++;
+  var t=simT;
+  var e=envelope();
+  var ramp=.12+.88*sm(.2,3,t);
+  var v=.30*ramp*(1+2.6*e)*(RM?.12:1);
 
-        // Animation variables
-        var clock = new THREE.Clock();
+  /* camera drift + pointer parallax */
+  if(!RM){px+=(tx-px)*Math.min(1,dt*2.2);py+=(ty-py)*Math.min(1,dt*2.2);}
+  cx=W/2+Math.sin(t*.11)*W*.015+px;
+  cy=H/2+Math.cos(t*.087)*H*.015+py;
+  rot=.05*Math.sin(t*.05)+.032*Math.sin(t*.021);
 
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
+  drawNebula(t,e);
 
-            var time = clock.getElapsedTime();
+  /* fade previous streaks (keeps transparency for nebula behind) */
+  ctx.globalCompositeOperation='destination-out';
+  ctx.fillStyle='rgba(0,0,0,'+(1-Math.exp(-dt*13)).toFixed(4)+')';
+  ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
 
-            particleSystem.rotation.y = time * 0.1;
-            particleSystem.rotation.x = time * 0.05;
+  var Fe=F*(1+.1*e);
+  var cs=Math.cos(rot),sn=Math.sin(rot);
+  var ext=1+e*2;
+  for(var i=0;i<stars.length;i++){
+    var s=stars[i];
+    s.z-=v*s.sp*dt;
+    s.lf+=dt;
+    if(s.z<=.055){spawn(s,false);continue;}
+    var rx=s.x*cs-s.y*sn, ry=s.x*sn+s.y*cs;
+    var iz=Fe/s.z;
+    var sx=cx+rx*iz, sy=cy+ry*iz;
+    if(sx<-90||sx>W+90||sy<-90||sy>H+90){spawn(s,false);continue;}
+    if(s.nw){s.px=sx;s.py=sy;s.nw=false;}
+    var a=1-s.z/1.4;
+    a=(a*a*.9+.08)*s.al*Math.min(1,s.lf*2.5)*(1+.25*e);
+    var lw=s.sz*(.5+(1.1-Math.min(s.z,1.1))*2.2);
+    ctx.globalAlpha=a>1?1:a;
+    ctx.lineWidth=lw>4.2?4.2:lw;
+    ctx.strokeStyle=s.col;
+    ctx.beginPath();
+    ctx.moveTo(sx+(s.px-sx)*ext, sy+(s.py-sy)*ext);
+    ctx.lineTo(sx,sy);
+    ctx.stroke();
+    s.px=sx;s.py=sy;
+  }
+  ctx.globalAlpha=1;
 
-            var sizes = geometry.attributes.size.array;
+  /* warp flash above streaks */
+  if(e>.02){
+    var fa=e*.12;
+    var fr=Math.min(W,H)*.5;
+    var fg=ctx.createRadialGradient(cx,cy,0,cx,cy,fr);
+    fg.addColorStop(0,'rgba(220,238,255,'+fa.toFixed(3)+')');
+    fg.addColorStop(1,'rgba(220,238,255,0)');
+    ctx.fillStyle=fg;
+    ctx.fillRect(0,0,W,H);
+  }
+  ctx.globalCompositeOperation='source-over';
 
-            for (var i = 0; i < particleCount; i++) {
-                sizes[i] = 20 + 10 * Math.sin((i + time * 5) * 0.3);
-            }
+  /* console readouts, throttled */
+  if((frame&3)===0){
+    var vs=(0.42+2.31*e).toFixed(2)+'c';
+    if(vs!==lastVel){lastVel=vs;velEl.textContent=vs;}
+    var mx=Math.round(e*100);
+    if(mx!==lastMx){lastMx=mx;mfill.style.transform='scaleX('+(0.14+0.86*e).toFixed(3)+')';}
+    var wp=e>.45;
+    if(wp!==lastWarp){
+      lastWarp=wp;
+      statEl.textContent=wp?'Warp Field Engaged':'Field · Stable';
+      statEl.className=wp?'warp':'';
+    }
+  }
+}
 
-            geometry.attributes.size.needsUpdate = true;
+/* ---------- visibility ---------- */
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){
+    if(raf){cancelAnimationFrame(raf);raf=0;}
+  }else if(!raf){
+    last=performance.now();
+    raf=requestAnimationFrame(loop);
+  }
+});
 
-            renderer.render(scene, camera);
-        }
-        animate();
+/* ---------- interaction ---------- */
+if(!RM){
+  window.addEventListener('pointermove',function(ev){
+    tx=(ev.clientX/W-.5)*W*.05;
+    ty=(ev.clientY/H-.5)*H*.05;
+  },{passive:true});
+  window.addEventListener('pointerleave',function(){tx=0;ty=0;});
+  window.addEventListener('pointerdown',function(){
+    if(simT-mT>1.2) mT=simT;
+  },{passive:true});
+}
 
-        // Handle window resize
-        window.addEventListener('resize', onWindowResize, false);
+/* ---------- clock ---------- */
+var clockEl=document.getElementById('clock'),
+    dateEl=document.getElementById('date'),
+    coordEl=document.getElementById('coord'),
+    velEl=document.getElementById('vel'),
+    mfill=document.getElementById('mfill'),
+    statEl=document.getElementById('stat');
+var DYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function p2(n){return n<10?'0'+n:''+n;}
+function tick(){
+  var d=new Date();
+  clockEl.textContent=p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
+  clockEl.setAttribute('datetime',d.toISOString());
+  dateEl.textContent=DYS[d.getDay()]+' · '+p2(d.getDate())+' '+MOS[d.getMonth()]+' '+d.getFullYear();
+  var ts=Math.floor(d.getTime()/1000);
+  var ra=(46320+ts*.4)%86400;
+  coordEl.textContent='RA '+p2(Math.floor(ra/3600))+':'+p2(Math.floor(ra%3600/60))
+    +' · DEC +0'+(7+Math.sin(ts*.001)*1.5).toFixed(1)+'°';
+}
+setInterval(tick,1000);
+tick();
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // Update date and time
-        function updateTime() {
-            var now = new Date();
-            var datetimeString = now.toLocaleString();
-            document.getElementById('datetime').textContent = datetimeString;
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
-    </script>
+/* ---------- go ---------- */
+size();
+last=performance.now();
+raf=requestAnimationFrame(loop);
+})();
+</script>
 </body>
-
 </html>

@@ -1,219 +1,496 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>serkankose77.me</title>
-    <style>
-        /* Reset margins and paddings */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d0716">
+<meta name="description" content="serkankose77.me — AUX-77 corrupted broadcast, a VHS vaporwave transmission.">
+<title>AUX-77 // serkankose77.me</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=VT323&display=swap">
+<style>
+:root{
+  --bg:#0d0716; --pink:#ff71ce; --cyan:#01cdfe; --mint:#05ffa1; --ink:#eae6ff;
+  --pad:max(18px,3.2vmin);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);font-family:'VT323','Courier New',monospace;color:var(--ink)}
+#stage{position:fixed;inset:0;background:radial-gradient(120% 95% at 50% 60%,#180b2c 0%,var(--bg) 72%)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-        /* Set the background color and font properties */
+/* ---- corner OSD ---- */
+.hud{position:absolute;inset:0;z-index:2;pointer-events:none}
+.osd{position:absolute;letter-spacing:.07em;line-height:1.18;
+  text-shadow:0 0 7px rgba(234,230,255,.45),1.5px 0 rgba(255,113,206,.6),-1.5px 0 rgba(1,205,254,.6);
+  opacity:0;animation:osdin .45s steps(4,end) forwards}
+.tl{top:var(--pad);left:var(--pad);animation-delay:.65s}
+.tr{top:var(--pad);right:var(--pad);text-align:right;animation-delay:.9s}
+.bl{bottom:var(--pad);left:var(--pad);animation-delay:1.15s}
+.br{bottom:var(--pad);right:var(--pad);text-align:right;animation-delay:1.4s}
+.l1{font-size:clamp(15px,2.4vmin,27px)}
+.l2{font-size:clamp(13px,1.9vmin,22px);opacity:.85}
+.big{font-size:clamp(24px,4.6vmin,52px);letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.mint{color:var(--mint)}
+.pk{color:var(--pink)}
+.dot{color:var(--pink);animation:blink 1.15s steps(2,start) infinite}
+.trk{opacity:0;transition:opacity .15s}
+.trk.on{opacity:1;animation:trkflick .13s steps(2) infinite}
+@keyframes osdin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes blink{50%{opacity:0}}
+@keyframes trkflick{50%{opacity:.35}}
 
-        body {
-            background: black;
-            color: #0F0;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            font-family: 'Courier New', Courier, monospace;
-            position: relative;
-            /* Establish a positioning context for the overlay */
-        }
+/* ---- CRT layers ---- */
+.scan{position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(4,2,8,.28) 0 1px,transparent 1px 3px)}
+.vig{position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:radial-gradient(130% 100% at 50% 48%,transparent 52%,rgba(4,1,9,.62) 100%);
+  box-shadow:inset 0 0 18vmin rgba(2,0,6,.7)}
+.flick{position:absolute;inset:0;z-index:5;pointer-events:none;background:#fff;opacity:0;
+  mix-blend-mode:overlay;animation:flick 9s steps(1) infinite}
+@keyframes flick{0%,91%{opacity:0}92%{opacity:.035}93%{opacity:0}96%{opacity:.05}96.6%{opacity:0}}
 
-        /* Canvas covers the entire viewport */
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            /* Ensure the canvas is behind the overlay */
-        }
+/* ---- no-canvas fallback ---- */
+.fallback{display:none;position:absolute;inset:0;z-index:1;align-items:center;justify-content:center;text-align:center}
+body.nocanvas .fallback{display:flex}
+.fallback span{font-family:'Rubik Mono One','Courier New',monospace;font-size:clamp(20px,5.6vw,120px);color:#f7efff;
+  text-shadow:3px 0 var(--pink),-3px 0 var(--cyan),0 0 34px rgba(255,113,206,.55)}
 
-        /* Overlay for the welcome message and time display */
-        .overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #0F0;
-            font-size: 48px;
-            text-align: center;
-            z-index: 2;
-            /* Ensure the overlay is above the canvas */
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.7), 0 0 20px rgba(0, 255, 0, 0.7);
-            pointer-events: none;
-            /* Allow clicks to pass through the overlay */
-        }
-
-        /* Styling for the time display */
-        .time-display {
-            margin-top: 20px;
-            font-size: 24px;
-            font-weight: normal;
-            color: #00FF00;
-            /* Brighter green */
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.9), 0 0 10px rgba(0, 255, 0, 0.9);
-        }
-
-
-        /* Responsive font sizes for smaller screens */
-        @media (max-width: 768px) {
-            .overlay {
-                font-size: 32px;
-            }
-
-            .time-display {
-                font-size: 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .overlay {
-                font-size: 24px;
-            }
-
-            .time-display {
-                font-size: 16px;
-            }
-        }
-    </style>
+@media (prefers-reduced-motion:reduce){
+  .osd{animation:none;opacity:1}
+  .dot,.trk.on{animation:none}
+  .flick{display:none}
+}
+</style>
 </head>
-
 <body>
-    <!-- Canvas Element for Matrix Effect -->
-    <canvas id="matrixCanvas"></canvas>
+<h1 class="sr">serkankose77.me — homelab broadcast</h1>
+<div id="stage" aria-hidden="true">
+  <canvas id="view"></canvas>
+  <div class="fallback"><span>serkankose77.me</span></div>
+  <div class="hud">
+    <div class="osd tl"><div class="l1">PLAY <span class="pk">&#9654;</span> SP</div><div id="clk" class="big">--:--:--</div></div>
+    <div class="osd tr"><div class="l1">AUX-77</div><div class="l2"><span class="dot">&#9679;</span> REC</div></div>
+    <div class="osd bl"><div id="dte" class="l1">&middot;&middot;&middot; &middot;&middot;.&middot;&middot;.&middot;&middot;&middot;&middot;</div><div class="l2 mint">S-VHS &middot; HOMELAB SIGNAL &middot; 240p</div></div>
+    <div class="osd br"><div id="trk" class="l2 mint trk">&#9626; TRACKING</div><div id="cnt" class="l1">CNT 0:00:00</div></div>
+  </div>
+  <div class="scan"></div><div class="vig"></div><div class="flick"></div>
+</div>
+<script>
+(function(){
+'use strict';
+var t0c=Date.now();
+var R=function(a,b){return a+Math.random()*(b-a);};
+var clamp=function(v,a,b){return v<a?a:(v>b?b:v);};
 
-    <!-- Overlay Element for Welcome Message and Time Display -->
-    <div class="overlay">
-        Welcome to serkankose77.me
-        <div class="time-display" id="timeDisplay">Loading time...</div>
-    </div>
+var view=document.getElementById('view');
+var vctx=view.getContext('2d',{alpha:false});
+if(!vctx){document.body.classList.add('nocanvas');}
+var scene=document.createElement('canvas');
+var sctx=scene?scene.getContext('2d',{alpha:false}):null;
+if(!vctx||!sctx){startClock();return;}
 
-    <script>
-        // Get the canvas element and its context
-        const canvas = document.getElementById('matrixCanvas');
-        const ctx = canvas.getContext('2d');
+var PAL={pink:'#ff71ce',cyan:'#01cdfe',mint:'#05ffa1'};
+var SITE='serkankose77.me';
+var DISP='"Rubik Mono One","Courier New",monospace';
+var POOL=Array.prototype.slice.call('アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンΔΞΨ#%&@01457');
+var SUB='H O M E L A B  ·  T R A N S M I S S I O N  ·  2 4 / 7';
+var MAXPX=6.5e6;
 
-        // Set the canvas to full screen
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+var mqRM=null,reduced=false;
+try{
+  mqRM=window.matchMedia('(prefers-reduced-motion: reduce)');
+  reduced=mqRM.matches;
+  var onRM=function(e){reduced=e.matches;};
+  if(mqRM.addEventListener)mqRM.addEventListener('change',onRM);
+  else if(mqRM.addListener)mqRM.addListener(onRM);
+}catch(e){}
 
-        // Characters to be used in the Matrix effect
-        const matrixChars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%^&*()*&^%+-/~{[|`]}';
+var W=2,H=2,DPR=1;
+var lines=[SITE],glyphs=[],fs=40,textW=10,textH=10;
+var tc={};                       // channel text canvases
+var CH=['pink','cyan','mint','core'];
+var par={x:0,y:0},ptx=0,pty=0;
 
-        // Convert the string into an array of single characters
-        const chars = matrixChars.split('');
+/* ---------- dodecahedron ---------- */
+var PHI=(1+Math.sqrt(5))/2,IP=1/PHI;
+var DV=[],DE=[];
+(function(){
+  var s=[1,-1],a,b,c,i,j;
+  for(i=0;i<2;i++)for(j=0;j<2;j++)for(c=0;c<2;c++)DV.push([s[i],s[j],s[c]]);
+  for(i=0;i<2;i++)for(j=0;j<2;j++){
+    DV.push([0,s[i]*IP,s[j]*PHI]);DV.push([s[i]*IP,s[j]*PHI,0]);DV.push([s[i]*PHI,0,s[j]*IP]);
+  }
+  var n=1/Math.sqrt(3);
+  for(i=0;i<20;i++){DV[i][0]*=n;DV[i][1]*=n;DV[i][2]*=n;}
+  var d2=function(p,q){var dx=p[0]-q[0],dy=p[1]-q[1],dz=p[2]-q[2];return dx*dx+dy*dy+dz*dz;};
+  var m=1e9;
+  for(i=0;i<20;i++)for(j=i+1;j<20;j++){var d=d2(DV[i],DV[j]);if(d<m)m=d;}
+  for(i=0;i<20;i++)for(j=i+1;j<20;j++)if(d2(DV[i],DV[j])<m*1.05)DE.push([i,j]);
+})();
 
-        const fontSize = 20;
-        let columns = canvas.width / fontSize; // Number of columns for the rain
+/* ---------- grain + sprites ---------- */
+var grains=[],gpat=[],sprites=[];
+(function(){
+  var i,p,g,gx,id,d,v;
+  for(i=0;i<4;i++){
+    g=document.createElement('canvas');g.width=g.height=160;
+    gx=g.getContext('2d');id=gx.createImageData(160,160);d=id.data;
+    for(p=0;p<d.length;p+=4){v=(Math.random()*255)|0;d[p]=d[p+1]=d[p+2]=v;d[p+3]=255;}
+    gx.putImageData(id,0,0);grains.push(g);gpat.push(vctx.createPattern(g,'repeat'));
+  }
+  var cols=[[255,113,206],[1,205,254],[5,255,161]];
+  for(i=0;i<3;i++){
+    g=document.createElement('canvas');g.width=g.height=48;gx=g.getContext('2d');
+    var rg=gx.createRadialGradient(24,24,0,24,24,24);
+    rg.addColorStop(0,'rgba('+cols[i]+',0.9)');
+    rg.addColorStop(0.35,'rgba('+cols[i]+',0.3)');
+    rg.addColorStop(1,'rgba('+cols[i]+',0)');
+    gx.fillStyle=rg;gx.fillRect(0,0,48,48);sprites.push(g);
+  }
+})();
 
-        // Array of drops - one per column
-        // Array of drops - one per column with speed
-        let drops = [];
+/* ---------- title text ---------- */
+function layout(){
+  lines=(W<H*0.95)?['serkankose77','.me']:[SITE];
+  glyphs=lines.map(function(l){return l.split('');});
+  sctx.font='100px '+DISP;
+  var cw=sctx.measureText('M').width/100;
+  var mx=0,i;for(i=0;i<lines.length;i++)if(lines[i].length>mx)mx=lines[i].length;
+  fs=Math.min((W*0.88)/(mx*cw),H*(lines.length>1?0.15:0.20),280);
+  fs=Math.max(fs,16);
+}
+function renderText(fast){
+  var lh=fs*1.24,pad=Math.ceil(fs*0.55);
+  sctx.font=fs+'px '+DISP;
+  var cellW=sctx.measureText('M').width;
+  var mx=0,i,li;for(i=0;i<lines.length;i++)if(lines[i].length>mx)mx=lines[i].length;
+  var maxW=cellW*mx;
+  textW=maxW+pad*2;textH=lh*lines.length+pad*2;
+  var dw=Math.max(2,Math.round(textW*DPR)),dh=Math.max(2,Math.round(textH*DPR));
+  for(i=0;i<CH.length;i++){
+    var k=CH[i],c=tc[k];
+    if(!c){c=tc[k]=document.createElement('canvas');}
+    if(c.width!==dw||c.height!==dh){c.width=dw;c.height=dh;}
+    var x=c.getContext('2d');
+    x.setTransform(DPR,0,0,DPR,0,0);
+    x.clearRect(0,0,textW,textH);
+    x.font=fs+'px '+DISP;x.textAlign='center';x.textBaseline='middle';
+    var col=(k==='core')?'#f7efff':PAL[k];
+    x.fillStyle=col;
+    if(!fast){x.shadowColor=col;x.shadowBlur=(k==='core')?fs*0.12:fs*0.30;}
+    for(li=0;li<glyphs.length;li++){
+      var chars=glyphs[li],lw=cellW*chars.length,x0=pad+(maxW-lw)/2;
+      var y=pad+lh*li+lh*0.55;
+      for(var ci=0;ci<chars.length;ci++)x.fillText(chars[ci],x0+(ci+0.5)*cellW,y);
+    }
+  }
+}
+function scramble(p){
+  for(var li=0;li<lines.length;li++){
+    var src=lines[li],g=glyphs[li];
+    for(var i=0;i<src.length;i++)
+      g[i]=(Math.random()<p)?POOL[(Math.random()*POOL.length)|0]:src.charAt(i);
+  }
+  renderText(true);
+}
+function restoreText(){glyphs=lines.map(function(l){return l.split('');});renderText(false);}
 
-        function initializeDrops() {
-            columns = canvas.width / fontSize;
-            drops = [];
-            for (let x = 0; x < columns; x++) {
-                drops[x] = {
-                    y: Math.random() * canvas.height / fontSize,
-                    speed: Math.random() * 1 + 0.5 // Random speed between 0.5 and 1.5
-                };
-            }
-        }
+/* ---------- particles ---------- */
+var parts=[];
+function initParts(){
+  var n=Math.round(clamp(W*H/26000,20,130));
+  var rs=clamp(Math.min(W,H)/900,0.5,2.2);
+  parts=[];
+  for(var i=0;i<n;i++)parts.push({
+    x:Math.random()*W,y:Math.random()*H,v:R(4,18),r:R(1.5,5)*rs,
+    s:(Math.random()*3)|0,a:R(0.10,0.38),tw:R(0.5,2),ph:R(0,6.28)});
+}
 
-        initializeDrops();
+/* ---------- resize ---------- */
+function resize(){
+  var w=Math.max(2,window.innerWidth),h=Math.max(2,window.innerHeight);
+  var dpr=Math.min(window.devicePixelRatio||1,2);
+  var sc=Math.min(1,Math.sqrt(MAXPX/(w*h*dpr*dpr))||1);
+  DPR=dpr*sc;W=w;H=h;
+  view.width=Math.round(w*DPR);view.height=Math.round(h*DPR);
+  scene.width=view.width;scene.height=view.height;
+  layout();renderText(false);initParts();
+}
+var rto=0;
+window.addEventListener('resize',function(){clearTimeout(rto);rto=setTimeout(resize,150);});
 
-        // Draw the characters
-        function drawMatrix() {
-            // Black background with opacity to create fading effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+/* ---------- event state ---------- */
+var raf=0,last=0,T=0,frame=0,startT=0,ease=0;
+var burst={next:0,end:0,amp:12,regen:0};
+var decay={next:0,end:0,t0:0,snap:true};
+var track={next:0,t0:0,on:false,dur:1400};
+var slices=[];
+var trkEl=document.getElementById('trk');
 
-            // Set the color to green for the characters
-            ctx.fillStyle = '#0F0';
-            ctx.font = fontSize + 'px monospace';
+function mkSlices(){
+  slices.length=0;
+  var dh=view.height,n=3+((Math.random()*4)|0);
+  for(var i=0;i<n;i++)slices.push({
+    y:(Math.random()*dh)|0,
+    h:((6+Math.random()*48)*DPR)|0,
+    dx:((Math.random()*2-1)*burst.amp*1.5*DPR)|0});
+}
 
-            // Loop over drops
-            for (let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                const x = i * fontSize;
-                const y = drops[i].y * fontSize;
+/* ---------- scene painters ---------- */
+function bgGrad(){
+  var a=Math.sin(T*0.10),b=Math.sin(T*0.073+2.1);
+  var g=sctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'rgb('+((8+3*a)|0)+','+((4+2*b)|0)+','+((15+4*a)|0)+')');
+  g.addColorStop(0.55,'rgb('+((15+5*b)|0)+',7,'+((28+6*a)|0)+')');
+  g.addColorStop(1,'rgb('+((25+7*a)|0)+','+((9+3*b)|0)+','+((40+8*b)|0)+')');
+  return g;
+}
+function drawGrid(){
+  var yh=H*0.63,vx=W/2+par.x*40,k,i,p,y,al;
+  var rg=sctx.createRadialGradient(vx,yh,0,vx,yh,Math.max(W*0.48,240));
+  rg.addColorStop(0,'rgba(255,113,206,0.12)');
+  rg.addColorStop(0.45,'rgba(122,44,166,0.055)');
+  rg.addColorStop(1,'rgba(13,7,22,0)');
+  sctx.fillStyle=rg;sctx.fillRect(0,yh-H*0.30,W,H*0.62);
+  sctx.lineWidth=1;
+  for(k=0;k<13;k++){
+    p=((k/13)+T*0.055)%1;
+    y=yh+(H-yh+40)*Math.pow(p,2.6);
+    al=0.10+p*0.55;
+    sctx.strokeStyle='rgba(255,113,206,'+al.toFixed(3)+')';
+    sctx.beginPath();sctx.moveTo(0,y);sctx.lineTo(W,y);sctx.stroke();
+  }
+  for(i=-9;i<=9;i++){
+    al=0.22-Math.abs(i)*0.012;
+    sctx.strokeStyle='rgba(1,205,254,'+al.toFixed(3)+')';
+    sctx.beginPath();sctx.moveTo(vx+i*W*0.012,yh);sctx.lineTo(vx+i*W*0.16,H+30);sctx.stroke();
+  }
+  sctx.lineWidth=2.5;sctx.strokeStyle='rgba(1,205,254,0.22)';
+  sctx.beginPath();sctx.moveTo(0,yh);sctx.lineTo(W,yh);sctx.stroke();
+  sctx.lineWidth=1;sctx.strokeStyle='rgba(140,240,255,0.55)';
+  sctx.beginPath();sctx.moveTo(0,yh);sctx.lineTo(W,yh);sctx.stroke();
+}
+function drawPoly(){
+  var cx=W/2+par.x*26,cy=H*0.40+par.y*18,Rr=Math.min(W,H)*0.30;
+  var ax=T*0.11,ay=T*0.17;
+  var ca=Math.cos(ax),sa=Math.sin(ax),cb=Math.cos(ay),sb=Math.sin(ay);
+  var P=[],i,v,x1,z1,y1,z2,s;
+  for(i=0;i<20;i++){
+    v=DV[i];
+    x1=v[0]*cb+v[2]*sb;z1=-v[0]*sb+v[2]*cb;
+    y1=v[1]*ca-z1*sa;z2=v[1]*sa+z1*ca;
+    s=2.7/(2.7+z2);
+    P.push([cx+x1*s*Rr,cy+y1*s*Rr,s]);
+  }
+  sctx.lineWidth=1.2;
+  for(i=0;i<DE.length;i++){
+    var pa=P[DE[i][0]],pb=P[DE[i][1]];
+    var al=clamp(0.05+((pa[2]+pb[2])*0.5-0.72)*0.14,0.03,0.18);
+    sctx.strokeStyle=(i%2?'rgba(5,255,161,':'rgba(1,205,254,')+al.toFixed(3)+')';
+    sctx.beginPath();sctx.moveTo(pa[0],pa[1]);sctx.lineTo(pb[0],pb[1]);sctx.stroke();
+  }
+}
+function drawParts(dtE){
+  sctx.globalCompositeOperation='lighter';
+  for(var i=0;i<parts.length;i++){
+    var p=parts[i];
+    p.y-=p.v*dtE;
+    if(p.y<-20){p.y=H+20;p.x=Math.random()*W;}
+    sctx.globalAlpha=p.a*(0.55+0.45*Math.sin(T*p.tw+p.ph));
+    sctx.drawImage(sprites[p.s],p.x-p.r,p.y-p.r,p.r*2,p.r*2);
+  }
+  sctx.globalAlpha=1;sctx.globalCompositeOperation='source-over';
+}
+function drawTitle(bActive){
+  var cx=W/2+par.x*6,cy=H*(lines.length>1?0.42:0.45)+par.y*5;
+  var gg=sctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(textW*0.62,W*0.25));
+  gg.addColorStop(0,'rgba(120,32,150,0.22)');
+  gg.addColorStop(0.6,'rgba(255,113,206,0.05)');
+  gg.addColorStop(1,'rgba(13,7,22,0)');
+  sctx.fillStyle=gg;
+  sctx.fillRect(cx-W*0.45,cy-H*0.35,W*0.9,H*0.7);
+  var split=2.4+Math.sin(T*0.9)*1.4;
+  var j=(bActive?burst.amp*0.5:0)+(1-ease)*Math.max(12,W*0.04);
+  if(reduced)j=0;
+  var px=cx-textW/2,py=cy-textH/2;
+  var rj=function(){return (Math.random()*2-1)*j;};
+  sctx.globalCompositeOperation='lighter';
+  sctx.globalAlpha=0.9;
+  sctx.drawImage(tc.pink,px-split+rj(),py+1+rj()*0.3,textW,textH);
+  sctx.drawImage(tc.cyan,px+split+rj(),py-1+rj()*0.3,textW,textH);
+  if(j>4){sctx.globalAlpha=0.5;sctx.drawImage(tc.mint,px+rj()*1.5,py+rj()*0.6,textW,textH);}
+  sctx.globalAlpha=0.96;
+  sctx.drawImage(tc.core,px+(j>2?rj()*0.4:0),py,textW,textH);
+  sctx.globalAlpha=1;sctx.globalCompositeOperation='source-over';
+  /* subtitle */
+  var sf=Math.max(13,fs*0.17);
+  var sy=cy+(lines.length>1?1.24:0.62)*fs+Math.max(12,fs*0.2);
+  sctx.font=sf+'px "VT323","Courier New",monospace';
+  sctx.textAlign='center';sctx.textBaseline='top';
+  sctx.globalAlpha=0.4;sctx.fillStyle=PAL.pink;
+  sctx.fillText(SUB,cx-1,sy+1);
+  sctx.globalAlpha=0.85;sctx.fillStyle=PAL.mint;
+  sctx.shadowColor=PAL.mint;sctx.shadowBlur=8;
+  sctx.fillText(SUB,cx,sy);
+  sctx.shadowBlur=0;sctx.globalAlpha=1;
+}
+function renderScene(dtE,bActive){
+  sctx.setTransform(DPR,0,0,DPR,0,0);
+  sctx.fillStyle=bgGrad();sctx.fillRect(0,0,W,H);
+  drawGrid();
+  drawPoly();
+  drawParts(dtE);
+  drawTitle(bActive);
+}
 
-                ctx.fillText(text, x, y);
+/* ---------- final composite (glitch pass) ---------- */
+function present(ts,bActive){
+  vctx.setTransform(1,0,0,1,0,0);
+  vctx.drawImage(scene,0,0);
+  var dw=view.width,dh=view.height,i;
+  for(i=0;i<slices.length;i++){
+    var s=slices[i];
+    vctx.drawImage(scene,0,s.y,dw,s.h,s.dx,s.y,dw,s.h);
+  }
+  if(bActive){
+    var n=1+((Math.random()*2)|0);
+    for(i=0;i<n;i++){
+      var by=Math.random()*dh,bh=(3+Math.random()*26)*DPR;
+      vctx.globalAlpha=0.18+Math.random()*0.2;
+      vctx.fillStyle=gpat[(Math.random()*4)|0];
+      vctx.fillRect(0,by,dw,bh);
+      if(Math.random()<0.5){
+        vctx.globalAlpha=0.10;
+        vctx.fillStyle=Math.random()<0.5?PAL.pink:PAL.cyan;
+        vctx.fillRect(0,by,dw,bh);
+      }
+    }
+    if(Math.random()<0.6){
+      var sy=Math.random()*dh*0.9,sh=2*DPR;
+      vctx.globalAlpha=0.5;
+      vctx.drawImage(scene,0,sy,dw,sh,0,sy,dw,sh*(6+Math.random()*10));
+    }
+    vctx.globalAlpha=1;
+  }
+  if(track.on){
+    var pr=(ts-track.t0)/track.dur;
+    var ty=dh*(1.05-pr*1.28);
+    var th=(24+16*Math.sin(pr*8.5))*DPR;
+    var wob=(Math.sin(ts*0.045)+Math.random()*0.6-0.3)*12*DPR;
+    if(ty<dh&&ty+th>0){
+      var cy0=Math.max(0,ty),ch0=Math.min(dh,ty+th)-cy0;
+      if(ch0>1)vctx.drawImage(scene,0,cy0,dw,ch0,wob,cy0+2*DPR,dw,ch0);
+      vctx.globalAlpha=0.45;vctx.fillStyle=gpat[frame&3];vctx.fillRect(0,ty,dw,th);
+      vctx.globalAlpha=0.22;vctx.fillStyle='#eae6ff';vctx.fillRect(0,ty+th,dw,Math.max(1,1.5*DPR));
+      vctx.globalAlpha=1;
+    }
+  }
+  var grainA=reduced?0.035:(0.04+(bActive?0.09:0)+(1-ease)*0.20);
+  var gp=gpat[reduced?0:(frame>>1)&3];
+  if(gp){
+    vctx.save();
+    vctx.globalAlpha=grainA;vctx.fillStyle=gp;
+    var gx=reduced?0:(Math.random()*160)|0,gy=reduced?0:(Math.random()*160)|0;
+    vctx.translate(-gx,-gy);vctx.fillRect(0,0,dw+160,dh+160);
+    vctx.restore();
+  }
+}
 
-                if (y > canvas.height && Math.random() > 0.975) {
-                    drops[i].y = 0;
-                    drops[i].speed = Math.random() * 1 + 0.5; // Assign new speed
-                }
+/* ---------- main loop ---------- */
+function loop(ts){
+  raf=requestAnimationFrame(loop);
+  if(!last)last=ts;
+  var dt=Math.min(0.05,(ts-last)/1000);last=ts;
+  var dtE=dt*(reduced?0.12:1);
+  T+=dtE;frame++;
+  if(!startT){
+    startT=ts;
+    burst.next=ts+2600;burst.end=ts+750;burst.amp=Math.max(10,W*0.028);burst.regen=0;
+    decay.next=ts+R(9000,15000);
+    track.next=ts+R(7000,13000);
+  }
+  ease=reduced?1:Math.min(1,(ts-startT)/1600);
+  ease=ease*ease*(3-2*ease);
+  par.x+=(ptx-par.x)*0.05;par.y+=(pty-par.y)*0.05;
+  var bActive=false;
+  if(!reduced){
+    if(ts>=burst.next&&ts>=burst.end){
+      burst.end=ts+R(160,420);
+      burst.amp=R(8,Math.max(14,W*0.04));
+      burst.next=ts+R(3000,6000);
+      burst.regen=0;
+    }
+    bActive=ts<burst.end;
+    if(bActive&&ts>=burst.regen){mkSlices();burst.regen=ts+R(45,95);}
+    if(!bActive&&slices.length)slices.length=0;
+    if(ts>=decay.next&&ts>=decay.end){
+      decay.t0=ts;decay.end=ts+820;decay.snap=false;
+      decay.next=ts+R(13000,22000);
+    }
+    if(ts<decay.end){
+      var pr=(ts-decay.t0)/820;
+      if(pr<0.66){if(frame%3===0)scramble(0.12+pr*0.55);}
+      else if(!decay.snap){
+        restoreText();decay.snap=true;
+        burst.end=Math.max(burst.end,ts+110);
+        burst.amp=Math.max(burst.amp,W*0.02);
+        mkSlices();
+      }
+    }else if(!decay.snap){restoreText();decay.snap=true;}
+    if(!track.on&&ts>=track.next){track.on=true;track.t0=ts;trkEl.classList.add('on');}
+    if(track.on&&ts>track.t0+track.dur){
+      track.on=false;track.next=ts+R(9000,18000);trkEl.classList.remove('on');
+    }
+  }else if(slices.length){slices.length=0;}
+  renderScene(dtE,bActive);
+  present(ts,bActive);
+}
 
-                drops[i].y += drops[i].speed; // Increment by individual speed
-            }
-        }
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){if(raf){cancelAnimationFrame(raf);raf=0;}}
+  else if(!raf){last=0;raf=requestAnimationFrame(loop);}
+});
+window.addEventListener('pointermove',function(e){
+  ptx=e.clientX/W-0.5;pty=e.clientY/H-0.5;
+},{passive:true});
+window.addEventListener('pointerdown',function(){
+  if(reduced)return;
+  var now=performance.now();
+  burst.end=now+R(240,430);
+  burst.amp=R(Math.max(10,W*0.02),Math.max(18,W*0.05));
+  burst.next=now+R(3000,6000);
+  burst.regen=0;
+},{passive:true});
 
-        // Loop the animation using requestAnimationFrame for better performance
-        function animate() {
-            drawMatrix();
-            requestAnimationFrame(animate);
-        }
+/* ---------- clock / OSD ---------- */
+function startClock(){
+  var clk=document.getElementById('clk'),dte=document.getElementById('dte'),cnt=document.getElementById('cnt');
+  var DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  var p2=function(n){return (n<10?'0':'')+n;};
+  var tick=function(){
+    var d=new Date();
+    clk.textContent=p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
+    dte.textContent=DAYS[d.getDay()]+' '+p2(d.getDate())+'.'+p2(d.getMonth()+1)+'.'+d.getFullYear();
+    var s=Math.floor((Date.now()-t0c)/1000);
+    cnt.textContent='CNT '+Math.floor(s/3600)+':'+p2(Math.floor(s/60)%60)+':'+p2(s%60);
+  };
+  tick();setInterval(tick,500);
+}
 
-        animate(); // Start the animation loop
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initializeDrops(); // Reinitialize drops on resize to prevent glitches
-        });
-
-        function updateTime() {
-            const timeDisplay = document.getElementById('timeDisplay');
-            const now = new Date();
-
-            // Format the time as HH:MM:SS AM/PM
-            let hours = now.getHours();
-            const minutes = now.getMinutes();
-            const seconds = now.getSeconds();
-            const strTime = `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
-
-            // Format the date as Weekday, Month Day, Year
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const strDate = now.toLocaleDateString(undefined, options);
-
-            timeDisplay.textContent = `${strDate} - ${strTime}`;
-        }
-
-        // Helper function to pad single digit numbers with a leading zero
-        function padZero(num) {
-            return num < 10 ? '0' + num : num;
-        }
-
-        // Update time immediately and then every second
-        updateTime();
-        setInterval(updateTime, 1000);
-
-        function debounce(func, wait) {
-            let timeout;
-            return function (...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        }
-
-        window.addEventListener('resize', debounce(() => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initializeDrops();
-        }, 200));
-
-    </script>
+/* ---------- boot ---------- */
+resize();
+startClock();
+raf=requestAnimationFrame(loop);
+if(document.fonts&&document.fonts.load){
+  Promise.all([
+    document.fonts.load('100px "Rubik Mono One"'),
+    document.fonts.load('20px "VT323"')
+  ]).then(function(){layout();renderText(false);}).catch(function(){});
+}
+})();
+</script>
 </body>
-
 </html>

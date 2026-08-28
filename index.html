@@ -3,10 +3,30 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>serkankose77.me</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
     <script>
-        function getRandomFile() {
-            // List of all your HTML files
+        (function () {
             const files = [
                 "index1.html", "index2.html", "index3.html",
                 "index4.html", "index5.html", "index6.html",
@@ -14,26 +34,22 @@
                 "index10.html", "index11.html", "index12.html"
             ];
 
-            // Get a random index from the files array
-            const randomIndex = Math.floor(Math.random() * files.length);
+            // Avoid showing the same page twice in a row
+            let last = null;
+            try { last = localStorage.getItem("lastLanding"); } catch (e) { }
 
-            // Return the randomly selected file
-            return files[randomIndex];
-        }
+            const pool = files.filter(f => f !== last);
+            const pick = pool[Math.floor(Math.random() * pool.length)];
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const randomFile = getRandomFile();
-            const iframe = document.createElement('iframe');
-            iframe.src = randomFile;
-            iframe.style.width = "100%";
-            iframe.style.height = "100vh";
-            iframe.style.border = "none";
+            try { localStorage.setItem("lastLanding", pick); } catch (e) { }
+
+            const iframe = document.createElement("iframe");
+            iframe.src = pick;
+            iframe.title = "serkankose77.me";
+            iframe.allow = "autoplay";
             document.body.appendChild(iframe);
-        });
+        })();
     </script>
-</head>
-
-<body style="margin: 0; padding: 0; overflow: hidden;">
 </body>
 
 </html>
