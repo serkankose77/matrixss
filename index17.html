@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to serkankose77.me</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background-color: black;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        canvas.dragging {
+            cursor: grabbing;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 9%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 1;
+            pointer-events: none;
+            text-shadow: 0 0 18px rgba(120, 160, 255, 0.55), 0 2px 8px rgba(0, 0, 0, 0.9);
+            white-space: nowrap;
+        }
+
+        #overlay h1 {
+            font-size: 48px;
+            margin: 0;
+        }
+
+        #overlay p {
+            font-size: 24px;
+            margin: 4px 0 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hud {
+            position: absolute;
+            z-index: 2;
+            pointer-events: none;
+            color: rgba(215, 225, 255, 0.88);
+            font: 12px/1.4 Consolas, "Courier New", monospace;
+            background: rgba(4, 6, 16, 0.55);
+            border: 1px solid rgba(150, 170, 255, 0.2);
+            border-radius: 999px;
+            padding: 6px 14px;
+            white-space: nowrap;
+            transition: opacity 0.8s ease;
+        }
+
+        #stats {
+            left: 14px;
+            top: 14px;
+        }
+
+        #hint {
+            left: 50%;
+            bottom: 14px;
+            transform: translateX(-50%);
+        }
+
+        #toast {
+            left: 50%;
+            top: calc(9% + 96px);
+            transform: translateX(-50%);
+            opacity: 0;
+        }
+
+        .hidden {
+            opacity: 0;
+        }
+
+        @media (max-width: 800px) {
+            #overlay h1 {
+                font-size: 26px;
+            }
+
+            #overlay p {
+                font-size: 16px;
+            }
+
+            #toast {
+                top: calc(9% + 62px);
+            }
+
+            #hint {
+                bottom: 48px;
+                white-space: normal;
+                width: 86%;
+                text-align: center;
+                border-radius: 12px;
+                font-size: 11px;
+            }
+
+            #stats {
+                font-size: 10px;
+                white-space: normal;
+                max-width: calc(100% - 56px);
+                border-radius: 12px;
+            }
+        }
+    </style>
+    <!-- Include Three.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+</head>
+
+<body>
+    <div id="overlay">
+        <h1>Welcome to serkankose77.me</h1>
+        <p id="datetime"></p>
+    </div>
+    <div id="toast" class="hud"></div>
+    <div id="stats" class="hud"></div>
+    <div id="hint" class="hud">Drag = orbit &middot; wheel / pinch = zoom &middot; click = drop a black hole &middot; shift+click / long-press = supernova &middot; C = clear &middot; R = reset &middot; SPACE = pause &middot; +/- = time</div>
+    <script>
+        'use strict';
+
+        // ==================================================================
+        //  Density-wave spiral galaxy (stars ride on tilted elliptical
+        //  orbits so the arms never wind up) + Newtonian black holes that
+        //  knock stars off their orbits, eat them, sink and merge.
+        // ==================================================================
+        const SMALL = Math.min(window.innerWidth, window.innerHeight) < 600 || /Mobi|Android/i.test(navigator.userAgent);
+        const N = SMALL ? 16000 : 36000;
+        const ND = SMALL ? 2500 : 5000;
+        const R_GAL = 100;
+        const V0 = 10;          // flat rotation speed
+        const RC = 6;           // core radius of the logarithmic potential
+        const PATTERN = 0.018;  // pattern speed of the spiral (rad/s)
+        const HOT = [1.0, 0.62, 0.28];
+
+        // ---------------------------- renderer ----------------------------
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 6000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // ------------------------------ helpers ----------------------------
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const smooth = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+        const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+
+        function glowTexture(stops) {
+            const c = document.createElement('canvas');
+            c.width = c.height = 128;
+            const g = c.getContext('2d');
+            const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+            stops.forEach(([o, col]) => grad.addColorStop(o, col));
+            g.fillStyle = grad;
+            g.fillRect(0, 0, 128, 128);
+            const tex = new THREE.CanvasTexture(c);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+        const GLOW = glowTexture([[0, 'rgba(255,255,255,1)'], [0.2, 'rgba(255,255,255,0.55)'], [0.5, 'rgba(255,255,255,0.12)'], [1, 'rgba(255,255,255,0)']]);
+
+        // --------------------------- star shader ---------------------------
+        function pointMaterial(alpha, scale) {
+            return new THREE.ShaderMaterial({
+                uniforms: {
+                    uPixelRatio: { value: renderer.getPixelRatio() },
+                    uScale: { value: scale },
+                    uAlpha: { value: alpha }
+                },
+                vertexShader: `
+                    attribute float aSize;
+                    attribute vec3 aColor;
+                    uniform float uPixelRatio;
+                    uniform float uScale;
+                    varying vec3 vColor;
+                    void main() {
+                        vColor = aColor;
+                        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = clamp(aSize * uPixelRatio * uScale / -mv.z, 1.0, 96.0);
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uAlpha;
+                    varying vec3 vColor;
+                    void main() {
+                        float d = length(gl_PointCoord - 0.5);
+                        float a = smoothstep(0.5, 0.0, d);
+                        a *= a;
+                        gl_FragColor = vec4(vColor, a * uAlpha);
+                    }
+                `,
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+        }
+
+        // ------------------------------ stars ------------------------------
+        const A = new Float32Array(N), RATIO = new Float32Array(N), TILT = new Float32Array(N);
+        const PH = new Float32Array(N), OM = new Float32Array(N), HY = new Float32Array(N);
+        const mode = new Uint8Array(N);                 // 0 = on density-wave rails, 1 = free (Newtonian)
+        const freeT = new Float32Array(N);              // seconds spent off the rails
+        const pos = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+        const col = new Float32Array(N * 3), base = new Float32Array(N * 3), size = new Float32Array(N);
+
+        const ratioFor = a => a < 14 ? lerp(1.0, 0.7, a / 14) : lerp(0.7, 0.82, clamp((a - 14) / 86, 0, 1));
+        const tiltFor = a => a * 0.046;
+        const ARM_PHASE = () => (Math.random() < 0.5 ? 0 : Math.PI) + gauss() * 0.28;
+        const omegaFor = a => V0 / (a + RC);
+
+        function initStar(i, aMin, aMax) {
+            let a;
+            if (aMin !== undefined) a = aMin + Math.random() * (aMax - aMin);
+            else if (Math.random() < 0.17) a = Math.abs(gauss()) * 7;
+            else { const s = 30; a = -s * Math.log(1 - Math.random() * (1 - Math.exp(-R_GAL / s))); }
+            a = Math.max(0.4, a);
+            A[i] = a;
+            RATIO[i] = ratioFor(a) + (Math.random() - 0.5) * 0.025;
+            TILT[i] = tiltFor(a) + (Math.random() - 0.5) * 0.06;
+            PH[i] = Math.random() * Math.PI * 2;
+            OM[i] = omegaFor(a) * (0.97 + Math.random() * 0.06);
+            const th = a < 14 ? 1.1 + 5.5 * (1 - a / 14) : 1.1 * (1 - a / 170) + 0.25;
+            HY[i] = gauss() * th * 0.5;
+
+            const t = smooth(3, 45, a);
+            let r = lerp(1.0, 0.68, t), g = lerp(0.83, 0.8, t), b = lerp(0.6, 1.0, t);
+            const roll = Math.random();
+            if (roll < 0.06 && a > 10) { r = 0.55; g = 0.72; b = 1.0; }
+            else if (roll < 0.14) { r = 1.0; g = 0.62; b = 0.45; }
+            const k = 0.5 + Math.random() * 0.5;
+            base[i * 3] = col[i * 3] = r * k;
+            base[i * 3 + 1] = col[i * 3 + 1] = g * k;
+            base[i * 3 + 2] = col[i * 3 + 2] = b * k;
+            size[i] = Math.random() < 0.012 ? 3.2 + Math.random() * 2 : 0.8 + Math.random() * 1.1;
+            mode[i] = 0;
+
+            // young OB associations: pattern-locked on the arm crests (major-axis ends)
+            if (aMin === undefined && a > 9 && Math.random() < 0.13) {
+                PH[i] = ARM_PHASE();
+                OM[i] = 0;
+                const kk = 0.75 + Math.random() * 0.35;
+                base[i * 3] = col[i * 3] = 0.62 * kk;
+                base[i * 3 + 1] = col[i * 3 + 1] = 0.78 * kk;
+                base[i * 3 + 2] = col[i * 3 + 2] = 1.0 * kk;
+                size[i] = 1.3 + Math.random() * 1.4;
+            }
+        }
+
+        const starGeo = new THREE.BufferGeometry();
+        const posAttr = new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage);
+        const colAttr = new THREE.BufferAttribute(col, 3).setUsage(THREE.DynamicDrawUsage);
+        const sizeAttr = new THREE.BufferAttribute(size, 1).setUsage(THREE.DynamicDrawUsage);
+        starGeo.setAttribute('position', posAttr);
+        starGeo.setAttribute('aColor', colAttr);
+        starGeo.setAttribute('aSize', sizeAttr);
+        const starMat = pointMaterial(0, 260);
+        const stars = new THREE.Points(starGeo, starMat);
+        stars.frustumCulled = false;
+        scene.add(stars);
+
+        // nebula / dust glow following the same orbits
+        const DA = new Float32Array(ND), DR = new Float32Array(ND), DT = new Float32Array(ND), DPH = new Float32Array(ND), DOM = new Float32Array(ND), DHY = new Float32Array(ND);
+        const dpos = new Float32Array(ND * 3), dcol = new Float32Array(ND * 3), dsize = new Float32Array(ND);
+        function initDust() {
+            for (let i = 0; i < ND; i++) {
+                const a = 8 + Math.random() * 88;
+                DA[i] = a;
+                DR[i] = ratioFor(a);
+                DT[i] = tiltFor(a) + 0.1 + (Math.random() - 0.5) * 0.08;
+                DPH[i] = Math.random() < 0.8 ? ARM_PHASE() : Math.random() * Math.PI * 2;
+                DOM[i] = 0; // gas lights up where the density wave compresses it -> locked to the pattern
+                DHY[i] = gauss() * 0.8;
+                const pink = Math.random() < 0.45;
+                const k = 0.5 + Math.random() * 0.5;
+                dcol[i * 3] = (pink ? 0.85 : 0.35) * k;
+                dcol[i * 3 + 1] = (pink ? 0.35 : 0.5) * k;
+                dcol[i * 3 + 2] = (pink ? 0.75 : 1.0) * k;
+                dsize[i] = 7 + Math.random() * 12;
+            }
+        }
+        initDust();
+        const dustGeo = new THREE.BufferGeometry();
+        const dposAttr = new THREE.BufferAttribute(dpos, 3).setUsage(THREE.DynamicDrawUsage);
+        dustGeo.setAttribute('position', dposAttr);
+        dustGeo.setAttribute('aColor', new THREE.BufferAttribute(dcol, 3));
+        dustGeo.setAttribute('aSize', new THREE.BufferAttribute(dsize, 1));
+        const dustMat = pointMaterial(0, 260);
+        const dust = new THREE.Points(dustGeo, dustMat);
+        dust.frustumCulled = false;
+        scene.add(dust);
+
+        // background star field
+        (function backgroundStars() {
+            const n = 2500;
+            const p = new Float32Array(n * 3), c = new Float32Array(n * 3), s = new Float32Array(n);
+            for (let i = 0; i < n; i++) {
+                const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = 1600 + Math.random() * 1600;
+                const q = Math.sqrt(1 - u * u);
+                p[i * 3] = r * q * Math.cos(th); p[i * 3 + 1] = r * u; p[i * 3 + 2] = r * q * Math.sin(th);
+                const k = 0.3 + Math.random() * 0.6;
+                c[i * 3] = k; c[i * 3 + 1] = k * (0.9 + Math.random() * 0.1); c[i * 3 + 2] = k;
+                s[i] = 10 + Math.random() * 18;
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+            g.setAttribute('aColor', new THREE.BufferAttribute(c, 3));
+            g.setAttribute('aSize', new THREE.BufferAttribute(s, 1));
+            scene.add(new THREE.Points(g, pointMaterial(0.9, 260)));
+        })();
+
+        // galactic core glow
+        const core = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: 0xffd6a0, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0 }));
+        core.scale.set(70, 70, 1);
+        scene.add(core);
+
+        function resetGalaxy() {
+            for (let i = 0; i < N; i++) initStar(i);
+            clearBlackHoles();
+            eaten = 0;
+            colAttr.needsUpdate = true;
+            sizeAttr.needsUpdate = true;
+        }
+
+        // --------------------------- black holes ---------------------------
+        const diskMat = new THREE.ShaderMaterial({
+            uniforms: { uTime: { value: 0 }, uFeed: { value: 0 } },
+            vertexShader: `
+                varying vec2 vP;
+                void main() {
+                    vP = position.xy;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float uTime;
+                uniform float uFeed;
+                varying vec2 vP;
+                void main() {
+                    float r = length(vP);
+                    float t = clamp((r - 1.35) / (6.0 - 1.35), 0.0, 1.0);
+                    float ang = atan(vP.y, vP.x);
+                    float streak = 0.62 + 0.38 * sin(ang * 5.0 + r * 3.2 - uTime * 7.0 / (0.35 + t));
+                    float fall = pow(1.0 - t, 2.2);
+                    vec3 c = mix(vec3(1.0, 0.96, 0.88), vec3(1.0, 0.58, 0.18), smoothstep(0.0, 0.35, t));
+                    c = mix(c, vec3(0.65, 0.12, 0.04), smoothstep(0.35, 1.0, t));
+                    float a = clamp(fall * streak * (0.85 + uFeed * 1.5), 0.0, 1.0);
+                    gl_FragColor = vec4(c, a);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        const horizonGeo = new THREE.SphereGeometry(1, 32, 16);
+        const horizonMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const diskGeo = new THREE.RingGeometry(1.35, 6, 96, 1);
+        const photonGeo = new THREE.RingGeometry(1.0, 1.16, 64);
+
+        const blackHoles = [];
+        const effects = [];
+        let eaten = 0;
+
+        function spawnBlackHole(x, z) {
+            const g = new THREE.Group();
+            const horizon = new THREE.Mesh(horizonGeo, horizonMat);
+            horizon.renderOrder = -1;
+            const disk = new THREE.Mesh(diskGeo, diskMat.clone());
+            disk.rotation.x = -Math.PI / 2;
+            const photon = new THREE.Mesh(photonGeo, new THREE.MeshBasicMaterial({ color: 0xffe2b8, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+            const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: 0xff9a50, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.5 }));
+            glow.scale.set(16, 16, 1);
+            g.add(horizon, disk, photon, glow);
+            scene.add(g);
+            const r = Math.hypot(x, z) || 1;
+            const vc = V0 * r / Math.sqrt(r * r + RC * RC);
+            const bh = {
+                x, z, vx: -z / r * vc * 0.8, vz: x / r * vc * 0.8,
+                gm: 260, feed: 0.6, group: g, disk, photon, glow, age: 0
+            };
+            blackHoles.push(bh);
+            flash(x, 0, z, 0xffb070, 30, 0.8);
+            return bh;
+        }
+
+        function removeBlackHole(bh) {
+            scene.remove(bh.group);
+            bh.disk.material.dispose();
+            bh.photon.material.dispose();
+            bh.glow.material.dispose();
+            blackHoles.splice(blackHoles.indexOf(bh), 1);
+        }
+
+        function clearBlackHoles() {
+            while (blackHoles.length) removeBlackHole(blackHoles[0]);
+        }
+
+        const captureR = bh => 0.8 + bh.gm * 0.0016;
+        const influenceR = bh => 6 + bh.gm * 0.014;
+
+        function flash(x, y, z, color, maxScale, dur) {
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+            s.position.set(x, y, z);
+            scene.add(s);
+            effects.push({ obj: s, t: 0, dur, maxScale, kind: 'flash' });
+        }
+
+        function shockRing(x, z, maxScale, color) {
+            const m = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 96), new THREE.MeshBasicMaterial({ color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, 0, z);
+            scene.add(m);
+            effects.push({ obj: m, t: 0, dur: 2.2, maxScale, kind: 'ring' });
+        }
+
+        function railsVelocity(i, t) {
+            const a = A[i], b = a * RATIO[i], phi = PH[i] + OM[i] * t, th = TILT[i] + PATTERN * t;
+            const dlx = -a * Math.sin(phi) * OM[i], dlz = b * Math.cos(phi) * OM[i];
+            const c = Math.cos(th), s = Math.sin(th);
+            return [dlx * c - dlz * s, dlz * c + dlx * s];
+        }
+
+        function freeStar(i) {
+            if (mode[i] === 1) return;
+            const [vx, vz] = railsVelocity(i, simTime);
+            vel[i * 3] = vx;
+            vel[i * 3 + 1] = 0;
+            vel[i * 3 + 2] = vz;
+            mode[i] = 1;
+            freeT[i] = 0;
+        }
+
+        // put a free star back on a density-wave orbit passing through its current position
+        function rerail(i) {
+            const i3 = i * 3;
+            const x = pos[i3], z = pos[i3 + 2];
+            let a = Math.max(0.4, Math.hypot(x, z)), lx = x, lz = z;
+            for (let it = 0; it < 4; it++) {
+                const th = tiltFor(a) + PATTERN * simTime;
+                const c = Math.cos(th), s = Math.sin(th);
+                lx = x * c + z * s;
+                lz = -x * s + z * c;
+                a = Math.max(0.4, Math.sqrt(lx * lx + (lz / ratioFor(a)) ** 2));
+            }
+            A[i] = a;
+            RATIO[i] = ratioFor(a);
+            TILT[i] = tiltFor(a);
+            OM[i] = omegaFor(a);
+            PH[i] = Math.atan2(lz / (a * RATIO[i]), lx / a) - OM[i] * simTime;
+            HY[i] = clamp(pos[i3 + 1], -4, 4);
+            col[i3] = base[i3]; col[i3 + 1] = base[i3 + 1]; col[i3 + 2] = base[i3 + 2];
+            mode[i] = 0;
+        }
+
+        function supernova(x, z, R, kick) {
+            const R2 = R * R;
+            for (let i = 0; i < N; i++) {
+                const dx = pos[i * 3] - x, dy = pos[i * 3 + 1], dz = pos[i * 3 + 2] - z;
+                const d2 = dx * dx + dy * dy + dz * dz;
+                if (d2 < R2) {
+                    freeStar(i);
+                    const d = Math.sqrt(d2) + 0.01;
+                    const f = (1 - d / R) * kick * (0.7 + Math.random() * 0.6);
+                    vel[i * 3] += dx / d * f;
+                    vel[i * 3 + 1] += dy / d * f * 0.35;
+                    vel[i * 3 + 2] += dz / d * f;
+                }
+            }
+            flash(x, 0, z, 0xbfe0ff, 90, 1.6);
+            shockRing(x, z, R * 2.2, 0x9cc8ff);
+        }
+
+        // ------------------------------ physics ------------------------------
+        let simTime = 0;
+        let timeScale = 1;
+        let paused = false;
+
+        function galAccel(x, z) {
+            const f = -V0 * V0 / (x * x + z * z + RC * RC);
+            return [f * x, f * z];
+        }
+
+        function updateBlackHoles(dt) {
+            for (const bh of blackHoles) {
+                bh.age += dt;
+                let [ax, az] = galAccel(bh.x, bh.z);
+                for (const o of blackHoles) {
+                    if (o === bh) continue;
+                    const dx = o.x - bh.x, dz = o.z - bh.z, d2 = dx * dx + dz * dz + 4;
+                    const f = o.gm * 0.35 / (d2 * Math.sqrt(d2));
+                    ax += dx * f; az += dz * f;
+                }
+                // dynamical friction: drag towards 85% of local circular speed -> slow inspiral
+                const r = Math.hypot(bh.x, bh.z) || 1;
+                const vc = V0 * r / Math.sqrt(r * r + RC * RC) * 0.85;
+                const tx = -bh.z / r * vc, tz = bh.x / r * vc;
+                ax -= (bh.vx - tx) * 0.22;
+                az -= (bh.vz - tz) * 0.22;
+                bh.vx += ax * dt; bh.vz += az * dt;
+                bh.x += bh.vx * dt; bh.z += bh.vz * dt;
+                bh.feed = Math.max(0, bh.feed - dt * 0.35);
+            }
+            // mergers
+            for (let i = blackHoles.length - 1; i >= 0; i--) {
+                const bh = blackHoles[i];
+                if (!bh) continue;
+                if (Math.hypot(bh.x, bh.z) < 3.5) {
+                    flash(0, 0, 0, 0xffe6c0, 140, 2.2);
+                    shockRing(0, 0, 90, 0xffc890);
+                    supernova(0, 0, 32, 20);
+                    removeBlackHole(bh);
+                    toast('Black hole merged with the galactic core');
+                    continue;
+                }
+                for (let j = i - 1; j >= 0; j--) {
+                    const o = blackHoles[j];
+                    const d = Math.hypot(o.x - bh.x, o.z - bh.z);
+                    if (d < (captureR(o) + captureR(bh)) * 1.3) {
+                        const m = o.gm + bh.gm;
+                        o.vx = (o.vx * o.gm + bh.vx * bh.gm) / m;
+                        o.vz = (o.vz * o.gm + bh.vz * bh.gm) / m;
+                        o.x = (o.x * o.gm + bh.x * bh.gm) / m;
+                        o.z = (o.z * o.gm + bh.z * bh.gm) / m;
+                        o.gm = Math.min(800, m);
+                        o.feed = 1;
+                        flash(o.x, 0, o.z, 0xd0e4ff, 110, 1.8);
+                        shockRing(o.x, o.z, 60, 0xb0d0ff);
+                        removeBlackHole(bh);
+                        toast('Black hole merger!');
+                        break;
+                    }
+                }
+            }
+        }
+
+        function updateStars(dt) {
+            const t = simTime;
+            const nb = blackHoles.length;
+            const bx = new Float32Array(nb), bz = new Float32Array(nb), bgm = new Float32Array(nb), brc2 = new Float32Array(nb), brin2 = new Float32Array(nb), brin = new Float32Array(nb);
+            for (let k = 0; k < nb; k++) {
+                const bh = blackHoles[k];
+                bx[k] = bh.x; bz[k] = bh.z; bgm[k] = bh.gm;
+                const rc = captureR(bh), ri = influenceR(bh);
+                brc2[k] = rc * rc; brin2[k] = ri * ri; brin[k] = ri;
+            }
+            const sub = nb ? 2 : 1;
+            const h = dt / sub;
+            let colorsDirty = false;
+
+            for (let i = 0; i < N; i++) {
+                const i3 = i * 3;
+                if (mode[i] === 0) {
+                    const a = A[i], phi = PH[i] + OM[i] * t, th = TILT[i] + PATTERN * t;
+                    const lx = a * Math.cos(phi), lz = a * RATIO[i] * Math.sin(phi);
+                    const c = Math.cos(th), s = Math.sin(th);
+                    const x = lx * c - lz * s, z = lx * s + lz * c;
+                    pos[i3] = x; pos[i3 + 1] = HY[i]; pos[i3 + 2] = z;
+                    for (let k = 0; k < nb; k++) {
+                        const dx = x - bx[k], dz = z - bz[k];
+                        if (dx * dx + dz * dz < brin2[k]) { freeStar(i); break; }
+                    }
+                    continue;
+                }
+
+                // free star: semi-implicit Euler in galaxy potential + black holes
+                let x = pos[i3], y = pos[i3 + 1], z = pos[i3 + 2];
+                let vx = vel[i3], vy = vel[i3 + 1], vz = vel[i3 + 2];
+                let swallowed = -1;
+                for (let st = 0; st < sub && swallowed < 0; st++) {
+                    const f = -V0 * V0 / (x * x + z * z + RC * RC);
+                    let ax = f * x, ay = -0.35 * y, az = f * z;
+                    for (let k = 0; k < nb; k++) {
+                        const dx = bx[k] - x, dy = -y, dz = bz[k] - z;
+                        const d2 = dx * dx + dy * dy + dz * dz;
+                        if (d2 < brc2[k]) { swallowed = k; break; }
+                        const e2 = d2 + 0.64;
+                        const g = bgm[k] / (e2 * Math.sqrt(e2));
+                        ax += dx * g; ay += dy * g; az += dz * g;
+                    }
+                    vx += ax * h; vy += ay * h; vz += az * h;
+                    const sp2 = vx * vx + vy * vy + vz * vz;
+                    if (sp2 > 3600) { const q = 60 / Math.sqrt(sp2); vx *= q; vy *= q; vz *= q; }
+                    x += vx * h; y += vy * h; z += vz * h;
+                }
+                if (swallowed >= 0 || x * x + z * z > 250000) {
+                    if (swallowed >= 0) {
+                        const bh = blackHoles[swallowed];
+                        bh.gm = Math.min(800, bh.gm + 0.03);
+                        bh.feed = Math.min(1.2, bh.feed + 0.05);
+                        eaten++;
+                    }
+                    initStar(i); // a new star is born somewhere else in the disk
+                    colorsDirty = true;
+                    continue;
+                }
+                pos[i3] = x; pos[i3 + 1] = y; pos[i3 + 2] = z;
+                vel[i3] = vx; vel[i3 + 1] = vy; vel[i3 + 2] = vz;
+
+                // tidal heating near black holes; far from all of them the orbit relaxes back
+                let heat = 0, nearest = Infinity;
+                for (let k = 0; k < nb; k++) {
+                    const dx = x - bx[k], dz = z - bz[k];
+                    const d = Math.sqrt(dx * dx + dz * dz);
+                    heat = Math.max(heat, 1 - d / (brin[k] * 0.9));
+                    nearest = Math.min(nearest, d / brin[k]);
+                }
+                freeT[i] += dt;
+                if (nearest > 2.2 && freeT[i] > 6 && vx * vx + vz * vz < 2 * V0 * V0 && Math.random() < dt * 0.3) {
+                    rerail(i);
+                    colorsDirty = true;
+                    continue;
+                }
+                heat = clamp(heat, 0, 1);
+                col[i3] = lerp(base[i3], HOT[0] * 1.6, heat);
+                col[i3 + 1] = lerp(base[i3 + 1], HOT[1] * 1.6, heat);
+                col[i3 + 2] = lerp(base[i3 + 2], HOT[2] * 1.6, heat);
+                colorsDirty = true;
+            }
+            posAttr.needsUpdate = true;
+            if (colorsDirty) { colAttr.needsUpdate = true; sizeAttr.needsUpdate = true; }
+
+            for (let i = 0; i < ND; i++) {
+                const a = DA[i], phi = DPH[i] + DOM[i] * t, th = DT[i] + PATTERN * t;
+                const lx = a * Math.cos(phi), lz = a * DR[i] * Math.sin(phi);
+                const c = Math.cos(th), s = Math.sin(th);
+                dpos[i * 3] = lx * c - lz * s;
+                dpos[i * 3 + 1] = DHY[i];
+                dpos[i * 3 + 2] = lx * s + lz * c;
+            }
+            dposAttr.needsUpdate = true;
+        }
+
+        // ------------------------------ camera ------------------------------
+        const startDist = clamp(205 / Math.min(1, (window.innerWidth / window.innerHeight) * 1.25), 205, 400);
+        const orbit = { theta: 0.5, phi: 1.02, dist: startDist, tTheta: 0.5, tPhi: 1.02, tDist: startDist };
+        let autoRotate = true;
+        let lastInput = -1e9;
+
+        function updateCamera(dt, now) {
+            if (autoRotate && now - lastInput > 5000) orbit.tTheta += dt * 0.04;
+            const k = 1 - Math.exp(-dt * 7);
+            orbit.theta += (orbit.tTheta - orbit.theta) * k;
+            orbit.phi += (orbit.tPhi - orbit.phi) * k;
+            orbit.dist += (orbit.tDist - orbit.dist) * k;
+            const sp = Math.sin(orbit.phi);
+            camera.position.set(orbit.dist * sp * Math.sin(orbit.theta), orbit.dist * Math.cos(orbit.phi), orbit.dist * sp * Math.cos(orbit.theta));
+            camera.lookAt(0, 0, 0);
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        function planePoint(clientX, clientY) {
+            const ndc = new THREE.Vector2(clientX / window.innerWidth * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(ndc, camera);
+            const p = new THREE.Vector3();
+            if (!raycaster.ray.intersectPlane(plane, p)) return null;
+            return Math.hypot(p.x, p.z) < 150 ? p : null;
+        }
+
+        // ------------------------------ input -------------------------------
+        const el = renderer.domElement;
+        const pointers = new Map();
+        let press = null;
+        let pinchDist = 0;
+
+        el.addEventListener('pointerdown', e => {
+            el.setPointerCapture(e.pointerId);
+            pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            lastInput = performance.now();
+            if (pointers.size === 1) {
+                press = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false, shift: e.shiftKey, long: false };
+                clearTimeout(press.timer);
+                press.timer = setTimeout(() => {
+                    if (press && !press.moved) {
+                        press.long = true;
+                        const p = planePoint(press.x, press.y);
+                        if (p) { supernova(p.x, p.z, 26, 34); toast('Supernova!'); }
+                    }
+                }, 600);
+            } else if (pointers.size === 2) {
+                if (press) { clearTimeout(press.timer); press.moved = true; }
+                const [a, b] = [...pointers.values()];
+                pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+            }
+        });
+
+        el.addEventListener('pointermove', e => {
+            const p = pointers.get(e.pointerId);
+            if (!p) return;
+            const dx = e.clientX - p.x, dy = e.clientY - p.y;
+            p.x = e.clientX; p.y = e.clientY;
+            lastInput = performance.now();
+            if (pointers.size === 2) {
+                const [a, b] = [...pointers.values()];
+                const d = Math.hypot(a.x - b.x, a.y - b.y);
+                if (pinchDist > 0) orbit.tDist = clamp(orbit.tDist * pinchDist / d, 40, 420);
+                pinchDist = d;
+                return;
+            }
+            if (press && !press.moved && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 6) {
+                press.moved = true;
+                clearTimeout(press.timer);
+                el.classList.add('dragging');
+            }
+            if (press && press.moved) {
+                orbit.tTheta -= dx * 0.006;
+                orbit.tPhi = clamp(orbit.tPhi - dy * 0.005, 0.08, 1.56);
+            }
+        });
+
+        function pointerEnd(e) {
+            pointers.delete(e.pointerId);
+            el.classList.remove('dragging');
+            if (pointers.size === 0 && press) {
+                clearTimeout(press.timer);
+                if (!press.moved && !press.long && e.type === 'pointerup') {
+                    const p = planePoint(e.clientX, e.clientY);
+                    if (p) {
+                        if (press.shift || e.shiftKey) { supernova(p.x, p.z, 26, 34); toast('Supernova!'); }
+                        else if (blackHoles.length >= 8) toast('Too many black holes — press C to clear');
+                        else spawnBlackHole(p.x, p.z);
+                    }
+                }
+                press = null;
+            }
+            if (pointers.size < 2) pinchDist = 0;
+        }
+        el.addEventListener('pointerup', pointerEnd);
+        el.addEventListener('pointercancel', pointerEnd);
+        el.addEventListener('contextmenu', e => e.preventDefault());
+
+        el.addEventListener('wheel', e => {
+            e.preventDefault();
+            lastInput = performance.now();
+            orbit.tDist = clamp(orbit.tDist * (e.deltaY > 0 ? 1.1 : 1 / 1.1), 40, 420);
+        }, { passive: false });
+
+        const toastEl = document.getElementById('toast');
+        const hintEl = document.getElementById('hint');
+        function toast(msg) {
+            toastEl.textContent = msg;
+            toastEl.style.opacity = 1;
+            clearTimeout(toast.t);
+            toast.t = setTimeout(() => { toastEl.style.opacity = 0; }, 1800);
+        }
+        setTimeout(() => hintEl.classList.add('hidden'), 10000);
+
+        window.addEventListener('keydown', e => {
+            lastInput = performance.now();
+            switch (e.code) {
+                case 'Space': e.preventDefault(); paused = !paused; toast(paused ? 'Paused' : 'Running'); break;
+                case 'KeyC': clearBlackHoles(); toast('Black holes cleared'); break;
+                case 'KeyR': resetGalaxy(); toast('New galaxy'); break;
+                case 'KeyA': autoRotate = !autoRotate; toast('Auto-rotate ' + (autoRotate ? 'ON' : 'OFF')); break;
+                case 'KeyS': {
+                    const a = Math.random() * Math.PI * 2, r = 20 + Math.random() * 60;
+                    supernova(Math.cos(a) * r, Math.sin(a) * r, 26, 34);
+                    toast('Supernova!');
+                    break;
+                }
+                case 'Equal': case 'NumpadAdd': timeScale = Math.min(8, timeScale * 1.5); toast('Time x' + timeScale.toFixed(2)); break;
+                case 'Minus': case 'NumpadSubtract': timeScale = Math.max(0.1, timeScale / 1.5); toast('Time x' + timeScale.toFixed(2)); break;
+                case 'KeyH': hintEl.classList.toggle('hidden'); break;
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ------------------------------ effects ------------------------------
+        function updateEffects(dt, now) {
+            for (let i = effects.length - 1; i >= 0; i--) {
+                const e = effects[i];
+                e.t += dt;
+                const p = e.t / e.dur;
+                if (p >= 1) {
+                    scene.remove(e.obj);
+                    e.obj.material.dispose();
+                    if (e.kind === 'ring') e.obj.geometry.dispose();
+                    effects.splice(i, 1);
+                    continue;
+                }
+                const ease = 1 - Math.pow(1 - p, 3);
+                if (e.kind === 'flash') {
+                    const s = e.maxScale * (0.25 + 0.75 * ease);
+                    e.obj.scale.set(s, s, 1);
+                    e.obj.material.opacity = (1 - p) * (1 - p);
+                } else {
+                    const s = e.maxScale * ease;
+                    e.obj.scale.set(s, s, s);
+                    e.obj.material.opacity = (1 - p) * 0.8;
+                }
+            }
+            for (const bh of blackHoles) {
+                const rh = captureR(bh);
+                bh.group.position.set(bh.x, 0, bh.z);
+                bh.group.scale.setScalar(rh);
+                bh.disk.material.uniforms.uTime.value = now * 0.001;
+                bh.disk.material.uniforms.uFeed.value = bh.feed;
+                bh.photon.lookAt(camera.position);
+                bh.glow.material.opacity = 0.35 + bh.feed * 0.5;
+                const gs = 16 + Math.sin(now * 0.006) * 0.8 + bh.feed * 6;
+                bh.glow.scale.set(gs, gs, 1);
+            }
+        }
+
+        const statsEl = document.getElementById('stats');
+        let statsTimer = 0;
+        function updateStats(dt) {
+            statsTimer -= dt;
+            if (statsTimer > 0) return;
+            statsTimer = 0.25;
+            let free = 0;
+            for (let i = 0; i < N; i++) free += mode[i];
+            statsEl.textContent = N.toLocaleString('en-US') + ' stars · ' + blackHoles.length + ' black hole' + (blackHoles.length === 1 ? '' : 's') +
+                ' · ' + eaten.toLocaleString('en-US') + ' consumed · ' + free.toLocaleString('en-US') + ' perturbed · time x' + timeScale.toFixed(2) + (paused ? ' · PAUSED' : '');
+        }
+
+        // ------------------------------ main loop ------------------------------
+        resetGalaxy();
+        let last = performance.now();
+        let fadeIn = 0;
+
+        function animate(now) {
+            requestAnimationFrame(animate);
+            const dt = Math.min((now - last) / 1000, 0.05);
+            last = now;
+            if (!paused) {
+                const sdt = dt * timeScale;
+                simTime += sdt;
+                updateBlackHoles(sdt);
+                updateStars(sdt);
+            }
+            fadeIn = Math.min(1, fadeIn + dt * 0.6);
+            starMat.uniforms.uAlpha.value = fadeIn;
+            dustMat.uniforms.uAlpha.value = fadeIn * 0.07;
+            core.material.opacity = fadeIn * 0.5;
+            updateCamera(dt, now);
+            updateEffects(dt, now);
+            updateStats(dt);
+            renderer.render(scene, camera);
+        }
+        requestAnimationFrame(animate);
+
+        // Update date and time in 24-hour format
+        function updateTime() {
+            const now = new Date();
+            const options = {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+            };
+            document.getElementById('datetime').textContent = now.toLocaleString('en-GB', options);
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+
+</html>
