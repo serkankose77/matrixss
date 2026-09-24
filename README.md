@@ -9,14 +9,26 @@ A set of home pages displaying time and date in front of animated backgrounds. `
 - Force a specific page with `?p=13`, `?page=index13.html` or `#13`.
 - Keyboard focus is handed to the loaded page, so its shortcuts work immediately.
 
-To add a page: create `indexN.html` and append it to `PAGES` in `index.html` (and bump `PAGES` in `index16.html` so the terminal's `ls` / `open` commands know about it).
+To add a page: create `indexN.html`, append it to `PAGES` in `index.html` and to `pages` in `gallery.html`, and bump `PAGES` in `index16.html` so the terminal's `ls` / `open` commands know about it.
 
 ## Pages
 
-| Page | Background |
+`gallery.html` shows every page as a live thumbnail grid.
+
+| Page | Theme |
 |---|---|
-| `index1` – `index11` | Three.js / canvas shader, particle and wave backgrounds |
-| `index12` | Matrix digital rain |
+| `index1` | Matrix digital rain |
+| `index2` | Synthwave night drive '84 |
+| `index3` | Hyperspace warp |
+| `index4` | Aurora borealis (WebGL) |
+| `index5` | Terminal boot (tty1) |
+| `index6` | Deep ocean abyss |
+| `index7` | Spiral galaxy NGC-77 |
+| `index8` | Rain on glass |
+| `index9` | Firefly forest |
+| `index10` | Liquid plasma (WebGL) |
+| `index11` | Carta caelestis star chart |
+| `index12` | VHS glitch |
 | `index13` – `index17` | Interactive pages, see below |
 
 ### Interactive pages
