@@ -1,175 +1,639 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Welcome to serkankose77.me</title>
-    <style>
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            height: 100%;
-            width: 100%;
-            background-color: black;
-        }
-
-        #overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        #overlay h1 {
-            font-size: 48px;
-            margin: 0;
-        }
-
-        #overlay p {
-            font-size: 24px;
-            margin: 0;
-        }
-    </style>
-    <!-- Include Three.js library -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>serkankose77.me — tty1 boot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d0800'/%3E%3Ctext x='7' y='23' font-family='monospace' font-size='18' fill='%23ffb000'%3E&gt;_%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070402;
+  --bezel:#0b0805;
+  --screen:#0d0800;
+  --ph:#ffb000;
+  --ph-hi:#ffd75e;
+  --ph-hot:#fff3cf;
+  --ph-dim:#a06f16;
+  --ph-faint:#5c3f0c;
+  --warn:#ffe9c2;
+  --glow:rgba(255,176,0,.5);
+  --glow2:rgba(255,140,0,.16);
+  --mono:'VT323',ui-monospace,'Courier New',Courier,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);
+  font-family:var(--mono);
+  color:var(--ph);
+  -webkit-font-smoothing:antialiased;
+}
+/* ---------- CRT chassis ---------- */
+.crt{
+  position:fixed;inset:0;
+  padding:clamp(6px,1.6vmin,22px);
+  background:
+    radial-gradient(120% 90% at 50% -10%,#171008 0%,var(--bezel) 55%,#050302 100%);
+}
+.screen{
+  position:relative;height:100%;width:100%;
+  background:
+    radial-gradient(130% 100% at 50% 42%,#141001 0%,var(--screen) 58%,#050300 100%);
+  border-radius:clamp(10px,2.2vmin,26px);
+  overflow:hidden;
+  box-shadow:
+    inset 0 0 clamp(40px,9vmin,120px) rgba(0,0,0,.85),
+    inset 0 0 8px rgba(0,0,0,.9),
+    0 0 clamp(18px,4vmin,44px) rgba(255,150,0,.07);
+  transform-origin:50% 50%;
+  animation:crt-on 1.15s cubic-bezier(.25,.8,.3,1) both;
+}
+@keyframes crt-on{
+  0%{transform:scale(0,.004);filter:brightness(10);opacity:0}
+  12%{transform:scale(1,.004);filter:brightness(10);opacity:1}
+  42%{transform:scale(1,.004);filter:brightness(9)}
+  72%{transform:scale(1,1.02);filter:brightness(2.4)}
+  100%{transform:scale(1,1);filter:brightness(1)}
+}
+.inner{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  animation:tear 11s linear infinite;
+}
+@keyframes tear{
+  0%,96.4%,100%{transform:translateX(0) skewX(0)}
+  96.7%{transform:translateX(3px) skewX(.5deg)}
+  97%{transform:translateX(-3px) skewX(-.5deg)}
+  97.3%{transform:translateX(1px) skewX(.2deg)}
+  97.6%{transform:none}
+}
+.inner.degauss{animation:degauss .55s ease-out}
+@keyframes degauss{
+  0%{transform:scale(1.025,1.01) skewX(1.4deg);filter:brightness(1.7)}
+  30%{transform:scale(.994,1) skewX(-.9deg);filter:brightness(1.15)}
+  60%{transform:scale(1.006,1) skewX(.4deg)}
+  100%{transform:none;filter:none}
+}
+/* ---------- overlays ---------- */
+.scanlines,.scanband,.vignette,.grain,.flicker,.glare,.flash{
+  position:absolute;inset:0;pointer-events:none;
+}
+.scanlines{
+  background:repeating-linear-gradient(0deg,
+    rgba(0,0,0,.28) 0 1px,transparent 1px 3px);
+  mix-blend-mode:multiply;z-index:6;
+}
+.scanband{
+  z-index:7;overflow:hidden;
+}
+.scanband::before{
+  content:"";position:absolute;left:0;right:0;top:-22%;height:20%;
+  background:linear-gradient(180deg,transparent,rgba(255,205,90,.05) 45%,rgba(255,205,90,.08) 50%,rgba(255,205,90,.05) 55%,transparent);
+  animation:band 7.5s linear infinite;
+}
+@keyframes band{to{transform:translateY(660%)}}
+.vignette{
+  z-index:8;
+  background:radial-gradient(ellipse at 50% 48%,transparent 55%,rgba(0,0,0,.5) 100%);
+}
+.glare{
+  z-index:9;
+  background:radial-gradient(38% 22% at 22% 9%,rgba(255,255,255,.055),transparent 70%);
+}
+.grain{
+  z-index:10;opacity:.05;mix-blend-mode:overlay;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="160" height="160" filter="url(%23n)" opacity="0.6"/></svg>');
+  background-size:160px 160px;
+}
+.flicker{
+  z-index:5;
+  background:radial-gradient(ellipse at 50% 44%,rgba(255,190,70,.5),rgba(255,140,0,.1) 58%,transparent 82%);
+  opacity:.035;animation:flick 3.7s linear infinite;
+}
+@keyframes flick{
+  0%,100%{opacity:.034}7%{opacity:.052}9%{opacity:.027}
+  21%{opacity:.046}23%{opacity:.031}36%{opacity:.055}
+  38%{opacity:.026}53%{opacity:.043}67%{opacity:.03}
+  81%{opacity:.052}83%{opacity:.033}
+}
+.flash{z-index:11;background:#ffe1a1;opacity:0}
+.flash.go{animation:flashk .22s ease-out}
+@keyframes flashk{0%{opacity:.65}100%{opacity:0}}
+/* ---------- status bar ---------- */
+.bar{
+  flex:0 0 auto;z-index:3;
+  display:flex;align-items:center;gap:1.5ch;
+  background:linear-gradient(180deg,#ffc23a,#f0a400);
+  color:#2a1400;
+  font-size:clamp(15px,2.2vmin,20px);
+  padding:.12em .9em .1em;
+  letter-spacing:.03em;
+  text-shadow:none;
+  box-shadow:0 0 14px rgba(255,176,0,.35);
+}
+.b-l{font-weight:normal}
+.b-l::before{content:"▚ ";opacity:.7}
+.b-c{opacity:.62;flex:1;text-align:center}
+.b-r{white-space:nowrap}
+@media (max-width:560px){.b-c{display:none}.bar{justify-content:space-between}.b-l{flex:1}}
+/* ---------- boot log ---------- */
+#boot{
+  flex:1 1 auto;min-height:0;z-index:2;
+  overflow-y:auto;scrollbar-width:none;
+  padding:clamp(12px,3vmin,42px) clamp(14px,3.5vmin,52px);
+  font-size:clamp(15px,2.15vmin,21px);
+  line-height:1.42;
+  text-shadow:0 0 6px var(--glow),0 0 22px var(--glow2);
+}
+#boot::-webkit-scrollbar{display:none}
+.line{display:flex;gap:1ch;align-items:baseline}
+.line .tx{white-space:pre-wrap;word-break:break-word;min-width:0}
+.tag{white-space:pre;flex:0 0 auto}
+.tag.ok{color:var(--ph-hi)}
+.tag.warn{color:var(--warn);text-shadow:0 0 8px rgba(255,240,200,.6)}
+.line.w .tx{color:var(--warn)}
+.line.bios{color:var(--ph-hi)}
+.line.dim{color:var(--ph-dim);text-shadow:0 0 4px rgba(255,176,0,.25)}
+.line.hi{color:var(--ph-hot);text-shadow:0 0 10px rgba(255,220,140,.7),0 0 30px var(--glow)}
+.ms{margin-left:auto;flex:0 0 auto;color:var(--ph-dim);padding-left:1ch}
+/* block cursor */
+.block{
+  display:inline-block;width:.55em;height:1em;
+  background:var(--ph);vertical-align:-.12em;
+  box-shadow:0 0 9px rgba(255,176,0,.85);
+  animation:blink 1.06s step-end infinite;
+}
+@keyframes blink{0%,55%{opacity:1}56%,100%{opacity:0}}
+/* ---------- neofetch finale ---------- */
+#fetch{
+  flex:1 1 auto;min-height:0;z-index:2;
+  overflow-y:auto;scrollbar-width:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:clamp(12px,3vmin,44px);
+  text-shadow:0 0 6px var(--glow),0 0 22px var(--glow2);
+}
+#fetch::-webkit-scrollbar{display:none}
+#fetch[hidden]{display:none}
+.fwrap{width:100%;max-width:940px;display:flex;flex-direction:column;gap:clamp(8px,1.6vmin,16px)}
+.rv{opacity:0;transform:translateY(9px)}
+#fetch.on .rv{
+  opacity:1;transform:none;
+  transition:opacity .55s ease,transform .55s ease;
+  transition-delay:calc(var(--i)*70ms);
+}
+.ban-cap{
+  text-align:center;color:var(--ph-dim);
+  font-size:clamp(13px,1.9vmin,18px);letter-spacing:.35em;
+}
+.banner{
+  position:relative;overflow:hidden;
+  align-self:center;text-align:center;
+  font-size:clamp(1.9rem,8vw,7rem);
+  font-weight:normal;line-height:1.02;
+  color:var(--ph-hi);
+  border:4px double var(--ph);
+  border-radius:4px;
+  padding:.04em .32em .1em;
+  letter-spacing:.02em;
+  text-shadow:0 0 12px rgba(255,200,80,.8),0 0 46px rgba(255,150,0,.35);
+  box-shadow:0 0 22px rgba(255,176,0,.22),inset 0 0 26px rgba(255,176,0,.09);
+}
+.banner::after{
+  content:"";position:absolute;inset:-12%;
+  background:linear-gradient(105deg,transparent 42%,rgba(255,244,210,.38) 50%,transparent 58%);
+  transform:translateX(-130%);
+}
+#fetch.on .banner::after{animation:sweep 1.25s .55s ease-out both}
+@keyframes sweep{to{transform:translateX(130%)}}
+.ban-sub{
+  text-align:center;color:var(--ph-dim);
+  font-size:clamp(13px,2vmin,19px);letter-spacing:.5em;padding-left:.5em;
+}
+.cols{
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;
+  gap:clamp(14px,4vmin,54px);
+  margin-top:clamp(4px,1vmin,12px);
+}
+.rack{
+  font-size:clamp(12px,2vmin,19px);line-height:1.18;
+  color:var(--ph);white-space:pre;
+}
+.rack .rk{color:var(--ph-hi)}
+.rack .mtr{color:var(--ph-dim)}
+.led{
+  display:inline-block;width:1ch;height:.62em;
+  border-radius:50%;background:var(--ph-hi);
+  box-shadow:0 0 7px rgba(255,215,94,.95);
+  animation:ledblink 2.2s step-end infinite;
+}
+.led:nth-of-type(1){animation-duration:2.3s}
+.rack .led2{animation-duration:1.5s;animation-delay:.4s}
+.rack .led3{animation-duration:3.1s;animation-delay:.9s}
+.rack .led4{animation:none;background:var(--ph-hi)}
+@keyframes ledblink{0%,78%{opacity:1}79%,88%{opacity:.25}89%,100%{opacity:1}}
+.info{
+  font-size:clamp(14px,2.1vmin,20px);line-height:1.5;min-width:0;
+}
+.row{display:flex;gap:1.2ch;flex-wrap:wrap}
+.row .k{color:var(--ph-hi);flex:0 0 auto}
+.row .v{color:var(--ph);min-width:0}
+.row.head .k{color:var(--ph-hot)}
+.row.rule{color:var(--ph-faint);letter-spacing:.05em}
+.pal{display:flex;gap:4px;justify-content:center;margin-top:clamp(2px,.8vmin,8px)}
+.pal span{width:clamp(18px,3.4vmin,34px);height:clamp(11px,2vmin,20px);display:inline-block}
+.p1{background:#241400}.p2{background:#4a2e04}.p3{background:#754c09}
+.p4{background:#a06f16}.p5{background:#cf9214}.p6{background:#ffb000}
+.p7{background:#ffd75e}.p8{background:#fff3cf}
+/* shell */
+#shellout{
+  margin-top:clamp(6px,1.4vmin,14px);
+  font-size:clamp(14px,2.1vmin,20px);line-height:1.45;
+  color:var(--ph-dim);white-space:pre-wrap;word-break:break-word;
+}
+.prompt{
+  font-size:clamp(15px,2.3vmin,22px);
+  margin-top:2px;white-space:pre-wrap;word-break:break-all;
+}
+.prompt .clk{color:var(--ph-dim)}
+.prompt .u{color:var(--ph-hot)}
+.prompt .h{color:var(--ph-hi)}
+.prompt .pp{color:var(--ph-dim)}
+.hint{
+  margin-top:clamp(6px,1.4vmin,14px);
+  text-align:center;color:var(--ph-faint);
+  font-size:clamp(12px,1.7vmin,16px);letter-spacing:.18em;
+}
+@media (max-height:560px){.rack{display:none}}
+@media (max-width:560px){
+  .ban-cap{letter-spacing:.16em}
+  .ban-sub{letter-spacing:.28em;padding-left:.28em}
+}
+/* skip hint during boot */
+#skiphint{
+  position:absolute;right:1.4em;bottom:.9em;z-index:4;
+  color:var(--ph-faint);font-size:clamp(12px,1.8vmin,16px);
+  letter-spacing:.2em;animation:hintfade 2.4s ease 2s both;
+}
+@keyframes hintfade{from{opacity:0}to{opacity:1}}
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  .rv{opacity:1;transform:none}
+  .scanband,.flicker{display:none}
+}
+noscript{position:absolute;inset:0;display:grid;place-items:center;z-index:20;
+  font-size:clamp(1.4rem,6vw,4rem);color:var(--ph-hi);text-align:center}
+</style>
 </head>
-
 <body>
-    <div id="overlay">
-        <h1>Welcome to serkankose77.me</h1>
-        <p id="datetime"></p>
+<div class="crt">
+  <div class="screen">
+    <div class="inner" id="inner">
+      <header class="bar" aria-label="status bar">
+        <span class="b-l">serkankose77.me</span>
+        <span class="b-c">tty1 · VT320 · 9600 8N1</span>
+        <span class="b-r" id="hclock">····-··-·· ··:··:··</span>
+      </header>
+
+      <main id="boot"><div id="log" aria-live="off"></div></main>
+
+      <section id="fetch" hidden>
+        <div class="fwrap">
+          <div class="ban-cap rv" style="--i:0">· HOMELAB · ANKARA · ALL SYSTEMS NOMINAL ·</div>
+          <h1 class="banner rv" style="--i:1">serkankose77.me</h1>
+          <div class="ban-sub rv" style="--i:2">AMBER PHOSPHOR TERMINAL</div>
+
+          <div class="cols">
+            <pre class="rack rv" style="--i:3" aria-hidden="true">╔══════════════════╗
+║ <span class="rk">pve1</span>     <span class="led"></span> <span class="mtr">▂▄▆▃▅</span> ║
+║ ░░░░░░░░░░░░░░░░ ║
+╠══════════════════╣
+║ <span class="rk">pve4</span>     <span class="led led2"></span> <span class="mtr">▅▃▂▄▂</span> ║
+║ ░░░░░░░░░░░░░░░░ ║
+╠══════════════════╣
+║ <span class="rk">LXC 113</span>  <span class="led led3"></span> <span class="mtr">▁▂▁▃▂</span> ║
+║ ░░░░░░░░░░░░░░░░ ║
+╠══════════════════╣
+║ <span class="rk">UPS</span>      <span class="led led4"></span> <span class="mtr">█████</span> ║
+╚══════════════════╝</pre>
+
+            <div class="info">
+              <div class="row head rv" style="--i:4"><span class="k">root@serkankose77.me</span></div>
+              <div class="row rule rv" style="--i:4"><span>────────────────────────</span></div>
+              <div class="row rv" style="--i:5"><span class="k">OS:</span><span class="v">Debian GNU/Linux 12 (bookworm)</span></div>
+              <div class="row rv" style="--i:6"><span class="k">Host:</span><span class="v">LXC 113 @ pve1 · Proxmox VE 8</span></div>
+              <div class="row rv" style="--i:7"><span class="k">Kernel:</span><span class="v">6.8.12-pve</span></div>
+              <div class="row rv" style="--i:8"><span class="k">Uptime:</span><span class="v" id="uptime">—</span></div>
+              <div class="row rv" style="--i:9"><span class="k">Shell:</span><span class="v">/bin/zsh 5.9</span></div>
+              <div class="row rv" style="--i:10"><span class="k">Packages:</span><span class="v">1337 (dpkg)</span></div>
+              <div class="row rv" style="--i:11"><span class="k">Network:</span><span class="v">vmbr0 · wg0 → office</span></div>
+              <div class="row rv" style="--i:12"><span class="k">Resolution:</span><span class="v" id="res">—</span></div>
+              <div class="row rv" style="--i:13"><span class="k">Terminal:</span><span class="v">tty1 · amber phosphor</span></div>
+              <div class="row rv" style="--i:14"><span class="k">DE:</span><span class="v">none (headless, as intended)</span></div>
+            </div>
+          </div>
+
+          <div class="pal rv" style="--i:15" aria-hidden="true">
+            <span class="p1"></span><span class="p2"></span><span class="p3"></span><span class="p4"></span><span class="p5"></span><span class="p6"></span><span class="p7"></span><span class="p8"></span>
+          </div>
+
+          <div id="shellout" aria-live="polite"></div>
+          <div class="prompt">[<span class="clk" id="pclock">··:··:··</span>] <span class="u">root</span>@<span class="h">webserver</span><span class="pp">:~#</span> <span id="typed"></span><span class="block"></span></div>
+          <div class="hint rv" style="--i:17">TYPE A COMMAND · TRY “reboot” · CLICK TO DEGAUSS</div>
+        </div>
+      </section>
+
+      <div id="skiphint">PRESS ANY KEY TO SKIP ▸</div>
     </div>
-    <script>
-        // Set up scene, camera, and renderer
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 5;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+    <div class="flicker"></div>
+    <div class="scanlines"></div>
+    <div class="scanband"></div>
+    <div class="vignette"></div>
+    <div class="glare"></div>
+    <div class="grain"></div>
+    <div class="flash" id="flash"></div>
+    <noscript>serkankose77.me<br>tty1 · amber phosphor terminal</noscript>
+  </div>
+</div>
 
-        // Create a plane geometry with shader material for the fluid effect
-        const vertexShader = `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `;
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var log=$('log'),boot=$('boot'),fetchEl=$('fetch'),inner=$('inner'),
+    flash=$('flash'),typedEl=$('typed'),shellout=$('shellout'),
+    hclock=$('hclock'),pclock=$('pclock'),uptimeEl=$('uptime'),resEl=$('res'),
+    skiphint=$('skiphint');
+var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var p2=function(n){return n<10?'0'+n:''+n};
 
-        const fragmentShader = `
-        uniform float time;
-        varying vec2 vUv;
+/* ---------------- boot script ---------------- */
+var LINES=[];
+function push(o){LINES.push(o)}
+function sys(tag,text,ms,pre){
+  push({mode:'burst',tag:tag,text:text,ms:ms||null,
+        pre:pre!=null?pre:90+Math.random()*190,
+        cps:650+Math.random()*550});
+}
+function buildScript(){
+  LINES.length=0;
+  push({mode:'type',pre:420,cps:34,cls:'bios',text:'SE PHOSPHOR BIOS v7.7 — CRT SELF-TEST PASSED'});
+  push({mode:'count',pre:260,cls:'bios',text:'Memory Test: ',target:524288,suffix:' KB OK',dur:750});
+  push({mode:'type',pre:220,cps:46,cls:'bios',text:'Boot device: /dev/homelab ... found'});
+  push({mode:'dots',pre:380,cls:'bios',text:'Loading vmlinuz-6.8.12-pve ',dots:10,dotMs:75,suffix:' done.'});
+  push({mode:'gap',pre:430});
+  sys('ok','Mounted /dev/homelab at /srv (ext4, noatime)','8ms');
+  sys('ok','Reached target Local File Systems');
+  sys('ok','Started pve-cluster.service — quorum ok: pve1 pve4','41ms');
+  sys('ok','Started networking.service — vmbr0 up · 192.168.1.0/24');
+  sys('ok','Started wireguard@wg0.service — office tunnel up','67ms');
+  sys('ok','Started technitium-dns.service — zones loaded');
+  sys('ok','Started traefik.service @ LXC 108 — *.serkankose77.me','112ms');
+  sys('ok','Started nginx.service @ LXC 113 — webserver ready','9ms');
+  sys('ok','Started influxdb.service @ LXC 104 — metrics flowing');
+  sys('ok','Started peanut.service — UPS on line power · battery 100%');
+  push({mode:'burst',cls:'dim',pre:430,cps:900,text:'         Starting frigate.service — probing cameras...'});
+  sys('ok','Started frigate.service — NVR: 8/8 cameras detected','388ms',850);
+  sys('ok','Started ollama.service @ LXC 126 — GPU inference ready');
+  sys('ok','Started n8n.service @ LXC 107 — workflows armed');
+  sys('warn','coffee.service: coffee levels critically low — refill advised',null,520);
+  sys('ok','Started hue-bridge.service — 192.168.1.143 linked');
+  sys('ok','Reached target Multi-User System',null,300);
+  push({mode:'gap',pre:200});
+  push({mode:'burst',cls:'dim',pre:380,cps:1100,text:'   Startup finished in 1.337s (kernel) + 2.740s (userspace) = 4.077s'});
+  push({mode:'type',pre:650,cps:24,cls:'hi',text:'Welcome to serkankose77.me · tty1'});
+}
 
-        // Smooth pseudo-random noise function
-        float random(vec2 p) {
-            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-        }
+/* ---------------- typing engine ---------------- */
+var phase='boot',idx=0,S=null,wait=0,last=0,raf=0,finTimer=0;
+var cur=document.createElement('span');cur.className='block';
 
-        float noise(vec2 p) {
-            vec2 i = floor(p);
-            vec2 f = fract(p);
+function tagSpan(t){
+  var s=document.createElement('span');
+  s.className='tag '+t;
+  s.textContent=t==='ok'?'[  OK  ]':'[ WARN ]';
+  return s;
+}
+function makeLine(L){
+  var el=document.createElement('div');
+  el.className='line'+(L.cls?' '+L.cls:'')+(L.tag==='warn'?' w':'');
+  if(L.tag)el.appendChild(tagSpan(L.tag));
+  var tx=document.createElement('span');tx.className='tx';
+  var tn=document.createTextNode('');
+  tx.appendChild(tn);
+  el.appendChild(tx);
+  log.appendChild(el);
+  return {el:el,tx:tx,tn:tn};
+}
+function fullText(L){
+  if(L.mode==='count')return L.text+L.target+L.suffix;
+  if(L.mode==='dots'){var d='';for(var i=0;i<L.dots;i++)d+='.';return L.text+d+L.suffix}
+  return L.text;
+}
+function finishLine(n,L){
+  n.tn.data=fullText(L);
+  if(L.ms){var m=document.createElement('span');m.className='ms';m.textContent=L.ms;n.el.appendChild(m)}
+}
+function gapLine(){
+  var el=document.createElement('div');el.className='line';
+  el.appendChild(document.createTextNode(' '));
+  log.appendChild(el);
+}
+function scrollLog(){boot.scrollTop=boot.scrollHeight}
 
-            float a = random(i);
-            float b = random(i + vec2(1.0, 0.0));
-            float c = random(i + vec2(0.0, 1.0));
-            float d = random(i + vec2(1.0, 1.0));
+function nextLine(){
+  S=null;
+  if(idx>=LINES.length){
+    phase='wait';
+    finTimer=setTimeout(showFetch,900);
+    return;
+  }
+  wait=LINES[idx].pre||0;
+}
+function step(now){
+  if(phase!=='boot')return;
+  var dt=Math.min(now-last,100);last=now;
+  var moved=false;
+  while(dt>0&&phase==='boot'){
+    if(wait>0){
+      if(wait>dt){wait-=dt;dt=0;break}
+      dt-=wait;wait=0;
+    }
+    var L=LINES[idx];
+    if(!L){nextLine();break}
+    if(L.mode==='gap'){gapLine();idx++;nextLine();moved=true;continue}
+    if(!S){
+      S={n:makeLine(L),acc:0,t:0,dn:0};
+      S.n.tx.appendChild(cur);
+      moved=true;
+    }
+    var done=false;
+    if(L.mode==='type'||L.mode==='burst'){
+      S.acc+=L.cps*dt/1000;dt=0;
+      var k=Math.min(L.text.length,Math.floor(S.acc));
+      if(S.n.tn.data.length!==k){S.n.tn.data=L.text.slice(0,k);moved=true}
+      done=k>=L.text.length;
+    }else if(L.mode==='count'){
+      S.t+=dt;dt=0;
+      var p=Math.min(1,S.t/L.dur);
+      var v=Math.floor(L.target*p/1024)*1024;
+      S.n.tn.data=L.text+v+(p>=1?L.suffix:'');moved=true;
+      done=p>=1;
+    }else if(L.mode==='dots'){
+      S.t+=dt;dt=0;
+      while(S.t>=L.dotMs&&S.dn<L.dots){S.t-=L.dotMs;S.dn++}
+      var ds='';for(var i=0;i<S.dn;i++)ds+='.';
+      S.n.tn.data=L.text+ds+(S.dn>=L.dots?L.suffix:'');moved=true;
+      done=S.dn>=L.dots;
+    }
+    if(done){
+      finishLine(S.n,L);
+      S.n.el.appendChild(cur);
+      idx++;nextLine();
+    }
+  }
+  if(moved)scrollLog();
+  raf=requestAnimationFrame(step);
+}
+function startBoot(){
+  buildScript();
+  phase='boot';idx=0;S=null;
+  nextLine();
+  last=performance.now();
+  cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(step);
+}
+function skipBoot(){
+  cancelAnimationFrame(raf);
+  if(S){finishLine(S.n,LINES[idx]);idx++}
+  for(;idx<LINES.length;idx++){
+    var L=LINES[idx];
+    if(L.mode==='gap'){gapLine();continue}
+    finishLine(makeLine(L),L);
+  }
+  scrollLog();
+  showFetch();
+}
 
-            vec2 u = f * f * (3.0 - 2.0 * f);
+/* ---------------- finale ---------------- */
+function showFetch(){
+  if(phase==='fetch')return;
+  phase='fetch';
+  clearTimeout(finTimer);
+  cancelAnimationFrame(raf);
+  if(!RM){flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go')}
+  boot.style.display='none';
+  skiphint.style.display='none';
+  fetchEl.hidden=false;
+  setRes();
+  tick();
+  requestAnimationFrame(function(){requestAnimationFrame(function(){fetchEl.classList.add('on')})});
+  if(!RM)degauss();
+}
+function degauss(){
+  inner.classList.remove('degauss');void inner.offsetWidth;
+  inner.classList.add('degauss');
+}
+function reboot(){
+  typedBuf='';typedEl.textContent='';
+  shellout.textContent='';
+  fetchEl.classList.remove('on');
+  fetchEl.hidden=true;
+  log.textContent='';
+  boot.style.display='';
+  skiphint.style.display='';
+  if(!RM){flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go')}
+  startBoot();
+}
 
-            return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-        }
+/* ---------------- clock / uptime / resolution ---------------- */
+var bootBase=Date.now()-(((17*24+4)*3600+23*60+7)*1000);
+function tick(){
+  var d=new Date();
+  var t=p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
+  hclock.textContent=DOW[d.getDay()]+' '+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+' · '+t;
+  pclock.textContent=t;
+  var s=Math.floor((Date.now()-bootBase)/1000);
+  var days=Math.floor(s/86400);s-=days*86400;
+  var h=Math.floor(s/3600);s-=h*3600;
+  var m=Math.floor(s/60);s-=m*60;
+  uptimeEl.textContent=days+' days, '+p2(h)+':'+p2(m)+':'+p2(s);
+}
+function uptimeStr(){return uptimeEl.textContent}
+setInterval(function(){if(!document.hidden)tick()},1000);
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){tick();last=performance.now()}
+});
+tick();
+function setRes(){
+  var dpr=Math.min(window.devicePixelRatio||1,2);
+  resEl.textContent=window.innerWidth+'×'+window.innerHeight+' @ '+dpr+'dppx';
+}
+var rT=0;
+window.addEventListener('resize',function(){clearTimeout(rT);rT=setTimeout(setRes,150)});
+setRes();
 
-        float fbm(vec2 p) {
-            float value = 0.0;
-            float amplitude = 0.5;
-            float frequency = 0.0;
-            for (int i = 0; i < 5; i++) {
-                value += amplitude * noise(p);
-                p *= 2.0;
-                amplitude *= 0.5;
-            }
-            return value;
-        }
+/* ---------------- interaction ---------------- */
+var typedBuf='';
+function out(t,echo){
+  var d=document.createElement('div');
+  d.textContent=t;
+  if(echo)d.style.color='var(--ph)';
+  shellout.appendChild(d);
+  while(shellout.children.length>8)shellout.removeChild(shellout.firstChild);
+}
+function runCmd(raw){
+  var c=raw.trim();
+  if(c)out('root@webserver:~# '+c,true);
+  var lc=c.toLowerCase();
+  if(!c){/* empty */}
+  else if(lc==='clear'){shellout.textContent=''}
+  else if(lc==='reboot'||lc==='reset'||lc==='exit'){reboot();return}
+  else if(lc==='neofetch'){out('you are looking at it.')}
+  else if(lc==='uptime'){out('up '+uptimeStr()+' · load average: 0.42, 0.13, 0.07')}
+  else if(lc==='whoami'){out('root. obviously.')}
+  else if(lc.indexOf('coffee')>=0){out('[FAILED] coffee.service: manual refill required')}
+  else if(lc==='ls'){out('infra/   cameras/   metrics/   toys/   TODO.md')}
+  else if(lc.indexOf('sudo')===0){out('you are already root. ambition noted.')}
+  else{out('zsh: command not found: '+c.split(' ')[0])}
+  typedBuf='';typedEl.textContent='';
+}
+window.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(phase==='boot'){skipBoot();e.preventDefault();return}
+  if(phase==='wait'){showFetch();e.preventDefault();return}
+  if(phase!=='fetch')return;
+  if(e.key==='Enter'){runCmd(typedBuf);e.preventDefault()}
+  else if(e.key==='Backspace'){typedBuf=typedBuf.slice(0,-1);typedEl.textContent=typedBuf;e.preventDefault()}
+  else if(e.key.length===1){
+    if(typedBuf.length<42){typedBuf+=e.key;typedEl.textContent=typedBuf}
+    e.preventDefault();
+  }
+});
+window.addEventListener('pointerdown',function(){
+  if(phase==='boot'){skipBoot()}
+  else if(phase==='wait'){showFetch()}
+  else if(phase==='fetch'&&!RM){degauss()}
+});
 
-        void main() {
-            vec2 uv = vUv;
-            uv = floor(uv * 80.0) / 80.0; // Make the effect more pixelated by reducing resolution
-            uv.x += time * 0.02;
-            uv.y += sin(time * 0.3) * 0.1;
-
-            float n = fbm(uv * 4.0);
-            float n2 = fbm(uv * 2.0 - time * 0.2);
-
-            vec3 color = vec3(0.0);
-            color.r = 0.6 + 0.4 * sin(time + n * 6.2831);
-            color.g = 0.5 + 0.5 * cos(time * 0.5 + n2 * 6.2831);
-            color.b = 0.7 + 0.3 * sin(time * 0.3 + n * 6.2831);
-
-            // Add depth by creating highlights and shadows
-            float depth = n * 0.6 + n2 * 0.4;
-            color *= vec3(depth);
-
-            gl_FragColor = vec4(color, 1.0);
-        }
-    `;
-
-        const uniforms = {
-            time: { value: 1.0 }
-        };
-
-        const material = new THREE.ShaderMaterial({
-            uniforms: uniforms,
-            vertexShader: vertexShader,
-            fragmentShader: fragmentShader
-        });
-
-        // Create plane geometry and mesh
-        const geometry = new THREE.PlaneGeometry(20, 20, 64, 64);
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        // Animate the scene
-        function animate() {
-            requestAnimationFrame(animate);
-            uniforms.time.value += 0.01;
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // Handle window resizing
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // Update date and time in 24-hour format
-        function updateTime() {
-            const now = new Date();
-            const options = {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric"
-            };
-            const datetimeString = now.toLocaleString('en-GB', options);
-            document.getElementById('datetime').textContent = datetimeString;
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
-    </script>
+/* ---------------- go ---------------- */
+if(RM){
+  buildScript();
+  for(idx=0;idx<LINES.length;idx++){
+    var L=LINES[idx];
+    if(L.mode==='gap'){gapLine();continue}
+    finishLine(makeLine(L),L);
+  }
+  showFetch();
+}else{
+  startBoot();
+}
+})();
+</script>
 </body>
-
 </html>
