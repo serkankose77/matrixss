@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to serkankose77.me</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background-color: #0b0e12;
+        }
+
+        #c {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 1;
+            pointer-events: none;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+        }
+
+        #overlay h1 {
+            font-size: 40px;
+            margin: 0;
+        }
+
+        #overlay p {
+            font-size: 20px;
+            margin: 2px 0 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .panel {
+            position: absolute;
+            z-index: 2;
+            background: rgba(10, 14, 20, 0.86);
+            border: 1px solid #2c3846;
+            border-radius: 10px;
+            color: #cfe0f5;
+            font: 12px/1.35 Consolas, "Courier New", monospace;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+            pointer-events: none;
+        }
+
+        .ttl {
+            color: #7f93ad;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid #243040;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #dro {
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 206px;
+            padding: 10px 12px 12px;
+        }
+
+        .ax {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 24px;
+            line-height: 1.25;
+        }
+
+        .ax span {
+            color: #7f93ad;
+            font-size: 16px;
+        }
+
+        .ax b {
+            color: #7dffa1;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3px;
+        }
+
+        .row span {
+            color: #7f93ad;
+        }
+
+        .row b {
+            color: #ffd479;
+            font-weight: 600;
+        }
+
+        .sep {
+            border-top: 1px solid #243040;
+            margin: 7px 0 5px;
+        }
+
+        .bar {
+            height: 7px;
+            background: #1a232e;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 3px;
+        }
+
+        .bar i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #3ddc84, #ffd54a 60%, #ff5a4f);
+        }
+
+        #dstatus {
+            margin-top: 9px;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            padding: 5px 0;
+            border-radius: 6px;
+            background: #16202b;
+            color: #9fb3c8;
+        }
+
+        #dstatus.run {
+            background: #0f3d22;
+            color: #7dffa1;
+        }
+
+        #dstatus.hold {
+            background: #4a3a06;
+            color: #ffd54a;
+        }
+
+        #dstatus.tool {
+            background: #0f2f4d;
+            color: #7cc4ff;
+        }
+
+        #dstatus.estop {
+            background: #5a0d0a;
+            color: #ffb4ae;
+            animation: blink 0.8s steps(2) infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                background: #b3130b;
+                color: #fff;
+            }
+        }
+
+        #prog {
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 290px;
+            padding: 10px 0 8px;
+        }
+
+        #prog .ttl {
+            padding: 0 12px 4px;
+        }
+
+        #gcode {
+            font: 12px/18px Consolas, "Courier New", monospace;
+            white-space: pre;
+            overflow: hidden;
+            height: 324px;
+        }
+
+        #gcode div {
+            padding: 0 10px 0 0;
+            color: #c8d6e8;
+        }
+
+        #gcode .done {
+            color: #5d6d80;
+        }
+
+        #gcode .cur {
+            background: #1d4d7a;
+            color: #fff;
+        }
+
+        #gcode .ln {
+            display: inline-block;
+            width: 44px;
+            text-align: right;
+            margin-right: 10px;
+            color: #4a5a6d;
+        }
+
+        #gcode .g {
+            color: #7cc4ff;
+        }
+
+        #gcode .m {
+            color: #ffb86b;
+        }
+
+        #gcode .c {
+            color: #7f93ad;
+            font-style: italic;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 3;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: max-content;
+            max-width: calc(100% - 110px);
+        }
+
+        button {
+            font: 700 12px Consolas, "Courier New", monospace;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid #3b4757;
+            background: linear-gradient(#2a333f, #1a2029);
+            color: #dfe8f3;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 3px 8px rgba(0, 0, 0, 0.45);
+            user-select: none;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.g {
+            background: linear-gradient(#26a047, #146128);
+            border-color: #3bc464;
+            color: #fff;
+        }
+
+        button.y {
+            background: linear-gradient(#e0b21a, #9c7708);
+            border-color: #ffd54a;
+            color: #1b1400;
+        }
+
+        button.on {
+            border-color: #7cc4ff;
+            color: #7cc4ff;
+        }
+
+        #bEstop {
+            position: absolute;
+            right: 16px;
+            bottom: 12px;
+            z-index: 3;
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            padding: 0;
+            border: 5px solid #e8c21a;
+            background: radial-gradient(circle at 38% 32%, #ff7a70, #d0190f 55%, #7d0903);
+            color: #fff;
+            font-size: 11px;
+            line-height: 1.1;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6), inset 0 -4px 8px rgba(0, 0, 0, 0.35);
+        }
+
+        #bEstop.latched {
+            transform: scale(0.94);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), inset 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .hud {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            pointer-events: none;
+            color: rgba(255, 255, 255, 0.88);
+            font: 12px/1.4 Consolas, "Courier New", monospace;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 999px;
+            padding: 6px 14px;
+            white-space: nowrap;
+            transition: opacity 0.8s ease;
+        }
+
+        #hint {
+            bottom: 66px;
+        }
+
+        #toast {
+            top: 92px;
+            opacity: 0;
+        }
+
+        .hidden {
+            opacity: 0;
+        }
+
+        @media (max-width: 979px) {
+            #overlay h1 {
+                font-size: 24px;
+            }
+
+            #overlay p {
+                font-size: 14px;
+            }
+
+            #prog {
+                display: none;
+            }
+
+            #dro {
+                left: 10px;
+                right: 10px;
+                width: auto;
+                top: auto;
+                bottom: 100px;
+                transform: none;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                column-gap: 14px;
+                padding: 8px 10px;
+            }
+
+            #dro .ttl,
+            #dro .sep,
+            #dro .opt {
+                display: none;
+            }
+
+            .ax {
+                font-size: 16px;
+            }
+
+            .ax span {
+                font-size: 12px;
+            }
+
+            #dstatus {
+                margin-top: 4px;
+                padding: 2px 0;
+            }
+
+            #controls {
+                bottom: 10px;
+                gap: 5px;
+            }
+
+            button {
+                padding: 7px 8px;
+                font-size: 10px;
+            }
+
+            #controls {
+                max-width: calc(100% - 20px);
+            }
+
+            #bEstop {
+                width: 54px;
+                height: 54px;
+                font-size: 8px;
+                bottom: auto;
+                top: 66px;
+                right: auto;
+                left: 10px;
+                border-width: 4px;
+            }
+
+            #hint,
+            #toast {
+                font-size: 10px;
+                white-space: normal;
+                width: 80%;
+                text-align: center;
+                border-radius: 12px;
+            }
+
+            #hint {
+                bottom: auto;
+                top: 126px;
+            }
+
+            #toast {
+                top: 126px;
+            }
+
+            #dro .row {
+                display: block;
+                margin-top: 1px;
+            }
+
+            #dro .row b {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+    <div id="overlay">
+        <h1>Welcome to serkankose77.me</h1>
+        <p id="datetime"></p>
+    </div>
+
+    <div id="dro" class="panel">
+        <div class="ttl"><span>POSITION</span><span>WORK G54</span></div>
+        <div class="ax"><span>X</span><b id="dX">0.000</b></div>
+        <div class="ax"><span>Y</span><b id="dY">0.000</b></div>
+        <div class="ax"><span>Z</span><b id="dZ">0.000</b></div>
+        <div class="sep"></div>
+        <div class="row"><span>FEED</span><b id="dF">0</b></div>
+        <div class="row"><span>SPINDLE</span><b id="dS">0</b></div>
+        <div class="row"><span>TOOL</span><b id="dT">T1</b></div>
+        <div class="row opt"><span id="dTname">&Oslash;6 90&deg; V-BIT</span></div>
+        <div class="row"><span>FEED OVR</span><b id="dFO">100%</b></div>
+        <div class="row opt"><span>CYCLE</span><b id="dCyc">00:00.0</b></div>
+        <div class="row opt"><span>M30 COUNT</span><b id="dCnt">0</b></div>
+        <div class="opt">
+            <div class="row"><span>SPINDLE LOAD</span><b id="dLoadTxt">0%</b></div>
+            <div class="bar"><i id="dLoad"></i></div>
+        </div>
+        <div id="dstatus">IDLE</div>
+    </div>
+
+    <div id="prog" class="panel">
+        <div class="ttl"><span>PROGRAM O07700</span><span id="dQueue">QUEUE 0</span></div>
+        <div id="gcode"></div>
+    </div>
+
+    <div id="controls">
+        <button id="bStart" class="g">CYCLE START</button>
+        <button id="bHold" class="y">FEED HOLD</button>
+        <button id="bFminus">FEED &minus;</button>
+        <button id="bFplus">FEED +</button>
+        <button id="bTime">ENGRAVE TIME</button>
+        <button id="bFace">FACE PLATE</button>
+        <button id="bSound">SOUND OFF</button>
+    </div>
+    <button id="bEstop">EMERGENCY<br>STOP</button>
+
+    <div id="toast" class="hud"></div>
+    <div id="hint" class="hud">Drag on the plate = program a toolpath &middot; click = spot drill &middot; wheel = feed override &middot; SPACE = hold / start &middot; F = face &middot; E = E-stop</div>
+
+    <script>
+        'use strict';
+
+        // =====================================================================
+        //  3-axis VMC simulator (top view). Stock: 6061 plate 320 x 180 mm,
+        //  G54 at the lower-left corner / top of stock. The machine engraves
+        //  the current time, faces it off every minute and re-engraves it.
+        //  User strokes are turned into G-code and executed in queue order.
+        // =====================================================================
+        const STOCK_W = 320, STOCK_H = 180;
+        const SAFE_Z = 2, CLEAR_Z = 25, TC_Z = 50;
+        const PARK = { x: 334, y: 188 };
+        const RAPID = 15000;            // mm/min
+        const TOOLCHANGE_TIME = 1.4;    // s
+        const TIME_H = 56, TIME_Y = 108;
+        const MARK_H = 10, MARK_Y = 30;
+        const VIEW = { x0: -32, x1: 362, y0: -26, y1: 214 };
+
+        const TOOLS = {
+            1: { name: 'Ø6 90° V-BIT', dia: 6, type: 'vbit' },
+            2: { name: 'Ø50 FACE MILL', dia: 50, type: 'face' }
+        };
+
+        // ------------------------ single-stroke engraving font -----------------
+        // glyph grid: x 0..w, y 0 (top) .. 6 (baseline)
+        const GLYPHS = {
+            '0': { w: 4, s: [[[1, 0], [3, 0], [4, 1], [4, 5], [3, 6], [1, 6], [0, 5], [0, 1], [1, 0]], [[3.4, 0.8], [0.6, 5.2]]] },
+            '1': { w: 4, s: [[[0.8, 1.2], [2, 0], [2, 6]], [[0.8, 6], [3.2, 6]]] },
+            '2': { w: 4, s: [[[0, 1], [1, 0], [3, 0], [4, 1], [4, 2.2], [0, 6], [4, 6]]] },
+            '3': { w: 4, s: [[[0, 1], [1, 0], [3, 0], [4, 1], [4, 2], [3, 3], [1.5, 3]], [[3, 3], [4, 4], [4, 5], [3, 6], [1, 6], [0, 5]]] },
+            '4': { w: 4, s: [[[3, 6], [3, 0], [0, 4.2], [4, 4.2]]] },
+            '5': { w: 4, s: [[[4, 0], [0.3, 0], [0, 2.8], [3, 2.6], [4, 3.6], [4, 5], [3, 6], [1, 6], [0, 5]]] },
+            '6': { w: 4, s: [[[4, 1], [3, 0], [1, 0], [0, 1], [0, 5], [1, 6], [3, 6], [4, 5], [4, 4], [3, 3], [0, 3]]] },
+            '7': { w: 4, s: [[[0, 0], [4, 0], [4, 1], [1.6, 6]]] },
+            '8': { w: 4, s: [[[1, 3], [0, 2], [0, 1], [1, 0], [3, 0], [4, 1], [4, 2], [3, 3], [1, 3], [0, 4], [0, 5], [1, 6], [3, 6], [4, 5], [4, 4], [3, 3]]] },
+            '9': { w: 4, s: [[[4, 3], [1, 3], [0, 2], [0, 1], [1, 0], [3, 0], [4, 1], [4, 5], [3, 6], [1, 6], [0, 5]]] },
+            ':': { w: 1, s: [[[0.5, 1.7], [0.5, 2.3]], [[0.5, 3.7], [0.5, 4.3]]] },
+            '.': { w: 1, s: [[[0.5, 5.5], [0.5, 6]]] },
+            ' ': { w: 2.5, s: [] },
+            'A': { w: 4, s: [[[0, 6], [0, 2], [2, 0], [4, 2], [4, 6]], [[0, 3.6], [4, 3.6]]] },
+            'E': { w: 4, s: [[[4, 0], [0, 0], [0, 6], [4, 6]], [[0, 3], [3, 3]]] },
+            'K': { w: 4, s: [[[0, 0], [0, 6]], [[4, 0], [0, 4]], [[1.4, 2.6], [4, 6]]] },
+            'M': { w: 4.6, s: [[[0, 6], [0, 0], [2.3, 3.4], [4.6, 0], [4.6, 6]]] },
+            'N': { w: 4, s: [[[0, 6], [0, 0], [4, 6], [4, 0]]] },
+            'O': { w: 4, s: [[[1, 0], [3, 0], [4, 1], [4, 5], [3, 6], [1, 6], [0, 5], [0, 1], [1, 0]]] },
+            'R': { w: 4, s: [[[0, 6], [0, 0], [3, 0], [4, 1], [4, 2], [3, 3], [0, 3]], [[2, 3], [4, 6]]] },
+            'S': { w: 4, s: [[[4, 1], [3, 0], [1, 0], [0, 1], [0, 2], [1, 3], [3, 3], [4, 4], [4, 5], [3, 6], [1, 6], [0, 5]]] }
+        };
+        const GLYPH_SPACING = 1.4;
+
+        function textStrokes(str, height, cx, cy) {
+            const u = height / 6;
+            let total = 0;
+            for (const ch of str) total += (GLYPHS[ch] || GLYPHS[' ']).w + GLYPH_SPACING;
+            total -= GLYPH_SPACING;
+            let x = cx - total * u / 2;
+            const strokes = [];
+            for (const ch of str) {
+                const g = GLYPHS[ch] || GLYPHS[' '];
+                for (const s of g.s) strokes.push(s.map(p => [x + p[0] * u, cy + (3 - p[1]) * u]));
+                x += (g.w + GLYPH_SPACING) * u;
+            }
+            return strokes;
+        }
+
+        function strokesBBox(strokes, margin) {
+            let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+            for (const s of strokes) for (const p of s) {
+                x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]);
+                y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]);
+            }
+            return {
+                x0: Math.max(0, x0 - margin), x1: Math.min(STOCK_W, x1 + margin),
+                y0: Math.max(0, y0 - margin), y1: Math.min(STOCK_H, y1 + margin)
+            };
+        }
+
+        // ------------------------------ G-code program ------------------------------
+        const f3 = v => (Math.abs(v) < 0.0005 ? 0 : v).toFixed(3);
+        let programLines = [];
+        let progBase = 0;
+
+        function appendProgram(lines) {
+            const start = progBase + programLines.length;
+            for (const l of lines) programLines.push(l);
+            if (programLines.length > 1600) {
+                const drop = programLines.length - 1200;
+                programLines.splice(0, drop);
+                progBase += drop;
+            }
+            consoleDirty = true;
+            return start;
+        }
+
+        class Job {
+            constructor(name, kind) {
+                this.name = name;
+                this.kind = kind;
+                this.lines = [];
+                this.moves = [];
+                this.bz = null;
+                this.lastF = null;
+                this.preview = null;
+                this.line('(' + name + ')');
+            }
+            line(text) {
+                this.lines.push(text);
+                return this.lines.length - 1;
+            }
+            move(m, lineIdx) {
+                m.line = lineIdx;
+                this.moves.push(m);
+            }
+            rapidZ(z) {
+                this.move({ t: 'rapid', z }, this.line('G0 Z' + f3(z)));
+                this.bz = z;
+            }
+            rapidXY(x, y) {
+                this.move({ t: 'rapid', x, y }, this.line('G0 X' + f3(x) + ' Y' + f3(y)));
+            }
+            feed(o, f) {
+                let s = 'G1';
+                if (o.x !== undefined) s += ' X' + f3(o.x);
+                if (o.y !== undefined) s += ' Y' + f3(o.y);
+                if (o.z !== undefined) s += ' Z' + f3(o.z);
+                if (f !== this.lastF) { s += ' F' + f + '.'; this.lastF = f; }
+                this.move({ t: 'feed', x: o.x, y: o.y, z: o.z, f }, this.line(s));
+                if (o.z !== undefined) this.bz = o.z;
+            }
+            tool(n) {
+                this.move({ t: 'rapid', z: TC_Z }, this.line('G28 G91 Z0.'));
+                this.line('G90');
+                this.move({ t: 'tool', n }, this.line('T' + n + ' M6 (' + TOOLS[n].name + ')'));
+                this.bz = TC_Z;
+                this.lastF = null;
+            }
+            spindle(s) {
+                this.move({ t: 'spindle', s }, this.line(s > 0 ? 'S' + s + ' M3' : 'M5'));
+            }
+            coolant(on) {
+                this.line(on ? 'M8' : 'M9');
+            }
+            approach(x, y) {
+                this.rapidXY(x, y);
+                if (this.bz === null || this.bz > SAFE_Z + 0.01) this.rapidZ(SAFE_Z);
+            }
+            engrave(strokes, depth, f, fz) {
+                for (const st of strokes) {
+                    this.approach(st[0][0], st[0][1]);
+                    this.feed({ z: -depth }, fz);
+                    for (let i = 1; i < st.length; i++) this.feed({ x: st[i][0], y: st[i][1] }, f);
+                    this.rapidZ(SAFE_Z);
+                }
+            }
+            drill(x, y, depth) {
+                const L = this.line('G98 G81 X' + f3(x) + ' Y' + f3(y) + ' Z' + f3(-depth) + ' R' + f3(SAFE_Z) + ' F400.');
+                this.move({ t: 'rapid', x, y }, L);
+                this.move({ t: 'rapid', z: SAFE_Z }, L);
+                this.move({ t: 'feed', z: -depth, f: 400 }, L);
+                this.move({ t: 'dwell', d: 0.15 }, L);
+                this.move({ t: 'rapid', z: SAFE_Z }, L);
+                this.line('G80');
+                this.bz = SAFE_Z;
+                this.lastF = null;
+            }
+            face(x0, x1, y0, y1, depth, f) {
+                const R = TOOLS[2].dia / 2;
+                const step = TOOLS[2].dia * 0.7;
+                const n = Math.max(1, Math.ceil((y1 - y0) / step)) + 1;
+                const xl = x0 - R - 4, xr = x1 + R + 4;
+                let leftToRight = true;
+                this.line('(FACE X' + f3(x0) + '..' + f3(x1) + ' Y' + f3(y0) + '..' + f3(y1) + ' DOC ' + depth + ')');
+                this.approach(xl, y1);
+                this.feed({ z: -depth }, 1200);
+                for (let i = 0; i < n; i++) {
+                    const y = y1 - i * (y1 - y0) / (n - 1);
+                    if (i > 0) this.feed({ y }, f);
+                    this.feed({ x: leftToRight ? xr : xl }, f);
+                    leftToRight = !leftToRight;
+                }
+                this.rapidZ(CLEAR_Z);
+            }
+            park() {
+                this.rapidZ(CLEAR_Z);
+                this.rapidXY(PARK.x, PARK.y);
+            }
+            end() {
+                this.move({ t: 'spindle', s: 0, ifIdle: true }, this.line('M5'));
+                this.coolant(false);
+                this.move({ t: 'call', fn: () => { partCount++; } }, this.line('M30'));
+            }
+        }
+
+        const TIME_FACE_BOX = strokesBBox(textStrokes('88:88', TIME_H, STOCK_W / 2, TIME_Y), 4);
+
+        function buildTimeJob(hhmm, withFace) {
+            const job = new Job('ENGRAVE TIME ' + hhmm, 'time');
+            job.hhmm = hhmm;
+            if (withFace) {
+                job.tool(2);
+                job.spindle(6500);
+                job.coolant(true);
+                const b = TIME_FACE_BOX;
+                job.face(b.x0, b.x1, b.y0, b.y1, 1.0, 5000);
+            }
+            job.tool(1);
+            job.spindle(18000);
+            job.coolant(true);
+            job.engrave(textStrokes(hhmm, TIME_H, STOCK_W / 2, TIME_Y), 0.8, 3000, 600);
+            job.park();
+            job.end();
+            return job;
+        }
+
+        function buildMarkJob() {
+            const job = new Job('PART MARKING', 'mark');
+            job.tool(1);
+            job.spindle(18000);
+            job.coolant(true);
+            job.engrave(textStrokes('SERKANKOSE77.ME', MARK_H, STOCK_W / 2, MARK_Y), 0.45, 2400, 500);
+            job.park();
+            job.end();
+            return job;
+        }
+
+        function buildFaceAllJob() {
+            const job = new Job('FACE FULL PLATE', 'face');
+            job.tool(2);
+            job.spindle(6500);
+            job.coolant(true);
+            job.face(0, STOCK_W, 0, STOCK_H, 1.0, 8000);
+            job.park();
+            job.end();
+            return job;
+        }
+
+        let userJobCount = 0;
+
+        function buildPathJob(pts) {
+            userJobCount++;
+            const job = new Job('USER PATH ' + userJobCount + ' - ' + pts.length + ' PTS', 'user');
+            job.preview = pts;
+            job.tool(1);
+            job.spindle(18000);
+            job.coolant(true);
+            job.engrave([pts.map(p => [p.x, p.y])], 0.6, 2400, 600);
+            job.park();
+            job.end();
+            return job;
+        }
+
+        function buildDrillJob(p) {
+            userJobCount++;
+            const job = new Job('SPOT DRILL ' + userJobCount, 'user');
+            job.previewDot = p;
+            job.tool(1);
+            job.spindle(18000);
+            job.coolant(true);
+            job.rapidZ(CLEAR_Z);
+            job.drill(p.x, p.y, 1.6);
+            job.park();
+            job.end();
+            return job;
+        }
+
+        // ------------------------------- machine state -------------------------------
+        const M = {
+            x: PARK.x, y: PARK.y, z: CLEAR_Z,
+            tool: 1, prevTool: 1,
+            rpm: 0, rpmTarget: 0,
+            feed: 0, rapid: false,
+            load: 0, cutting: false,
+            spin: 0
+        };
+        let queue = [];
+        let cur = null;
+        let mi = 0;
+        let moveTimer = 0;
+        let toolChange = null;     // { from, to, p }
+        let hold = false;
+        let estop = false;
+        let feedOverride = 1.0;
+        let partCount = 0;
+        let cycleStart = 0, cycleTime = 0;
+        let waitingSpindle = false;
+        let lastLineGlobal = 0;
+        let consoleDirty = true;
+
+        function enqueue(job) {
+            if (queue.filter(j => j.kind === 'user').length >= 12 && job.kind === 'user') {
+                toast('Queue full — wait for the machine');
+                userJobCount--;
+                return false;
+            }
+            queue.push(job);
+            return true;
+        }
+
+        function enqueueTime(job) {
+            const k = queue.findIndex(j => j.kind === 'time');
+            if (k >= 0) queue[k] = job;
+            else queue.unshift(job);
+        }
+
+        function startJob(job) {
+            cur = job;
+            mi = 0;
+            moveTimer = 0;
+            cur.base = appendProgram(job.lines);
+            cycleStart = performance.now();
+        }
+
+        function machineUpdate(dt) {
+            // spindle ramp (accel ~ 24000 rpm/s, e-stop brakes harder)
+            const ramp = estop ? 60000 : 24000;
+            if (M.rpm < M.rpmTarget) M.rpm = Math.min(M.rpmTarget, M.rpm + ramp * dt);
+            else M.rpm = Math.max(M.rpmTarget, M.rpm - ramp * dt);
+            M.spin += dt * Math.min(M.rpm / 60, 14) * 2.2;
+
+            M.cutting = false;
+            waitingSpindle = false;
+            if (estop || hold) { M.feed = 0; return; }
+
+            let budget = dt;
+            let guard = 0;
+            while (budget > 1e-6 && guard++ < 2000) {
+                if (!cur) {
+                    const next = queue.shift();
+                    if (!next) { M.feed = 0; break; }
+                    startJob(next);
+                }
+                if (mi >= cur.moves.length) {
+                    cycleTime = (performance.now() - cycleStart) / 1000;
+                    lastLineGlobal = cur.base + cur.lines.length - 1;
+                    cur = null;
+                    consoleDirty = true;
+                    continue;
+                }
+                const mv = cur.moves[mi];
+                if (mv.t === 'rapid' || mv.t === 'feed') {
+                    if (mv.t === 'feed' && M.rpmTarget > 0 && M.rpm < M.rpmTarget * 0.97) {
+                        waitingSpindle = true;
+                        break;
+                    }
+                    const txp = mv.x !== undefined ? mv.x : M.x;
+                    const typ = mv.y !== undefined ? mv.y : M.y;
+                    const tzp = mv.z !== undefined ? mv.z : M.z;
+                    const dx = txp - M.x, dy = typ - M.y, dz = tzp - M.z;
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    const f = mv.t === 'rapid' ? RAPID : mv.f * feedOverride;
+                    const speed = f / 60;
+                    const reach = speed * budget;
+                    const p0x = M.x, p0y = M.y, p0z = M.z;
+                    if (dist <= reach) {
+                        M.x = txp; M.y = typ; M.z = tzp;
+                        budget -= dist / speed;
+                        mi++;
+                    } else {
+                        const k = reach / dist;
+                        M.x += dx * k; M.y += dy * k; M.z += dz * k;
+                        budget = 0;
+                    }
+                    M.feed = f;
+                    M.rapid = mv.t === 'rapid';
+                    cut(p0x, p0y, p0z, M.x, M.y, M.z);
+                } else if (mv.t === 'tool') {
+                    if (M.tool === mv.n && !toolChange) { mi++; continue; }
+                    if (!toolChange) {
+                        toolChange = { from: M.tool, to: mv.n, p: 0 };
+                        M.rpmTarget = 0;
+                    }
+                    moveTimer += budget;
+                    toolChange.p = Math.min(1, moveTimer / TOOLCHANGE_TIME);
+                    if (toolChange.p >= 0.5) M.tool = mv.n;
+                    if (moveTimer >= TOOLCHANGE_TIME) {
+                        budget = moveTimer - TOOLCHANGE_TIME;
+                        moveTimer = 0;
+                        toolChange = null;
+                        mi++;
+                    } else budget = 0;
+                } else if (mv.t === 'spindle') {
+                    if (!(mv.ifIdle && queue.length > 0)) M.rpmTarget = mv.s;
+                    mi++;
+                } else if (mv.t === 'dwell') {
+                    moveTimer += budget;
+                    if (moveTimer >= mv.d) { budget = moveTimer - mv.d; moveTimer = 0; mi++; }
+                    else budget = 0;
+                } else if (mv.t === 'call') {
+                    mv.fn();
+                    mi++;
+                } else {
+                    mi++;
+                }
+            }
+        }
+
+        function currentLineGlobal() {
+            if (cur) {
+                const mv = cur.moves[Math.min(mi, cur.moves.length - 1)];
+                return cur.base + (mv ? mv.line : 0);
+            }
+            return lastLineGlobal;
+        }
+
+        // ------------------------------ canvases & view ------------------------------
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const bg = document.createElement('canvas');
+        let W = 0, H = 0, DPR = 1;
+        const view = { s: 1, ox: 0, oy: 0 };
+        let stock = null, dark = null, light = null, clean = null;
+        let sctx, dctx, lctx;
+        let stockK = 1, stockPH = 1;
+
+        const sx = x => view.ox + x * view.s;
+        const sy = y => view.oy - y * view.s;
+        const toMM = (px, py) => ({ x: (px - view.ox) / view.s, y: (view.oy - py) / view.s });
+
+        function makeCanvas(w, h) {
+            const c = document.createElement('canvas');
+            c.width = w;
+            c.height = h;
+            return c;
+        }
+
+        function layout() {
+            DPR = Math.min(window.devicePixelRatio || 1, 2);
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = Math.floor(W * DPR);
+            canvas.height = Math.floor(H * DPR);
+            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+            const wide = W >= 980;
+            const ov = document.getElementById('overlay').getBoundingClientRect();
+            const ctl = document.getElementById('controls').getBoundingClientRect();
+            const dro = document.getElementById('dro').getBoundingClientRect();
+            const pr = document.getElementById('prog').getBoundingClientRect();
+            let left = 10, right = W - 10, top = ov.bottom + 4, bottom = ctl.top - 8;
+            if (wide) {
+                left = dro.right + 8;
+                right = pr.left - 8;
+            } else {
+                bottom = dro.top - 4;
+            }
+            const s = Math.max(0.4, Math.min((right - left) / (VIEW.x1 - VIEW.x0), (bottom - top) / (VIEW.y1 - VIEW.y0)));
+            view.s = s;
+            view.ox = (left + right) / 2 - (VIEW.x0 + VIEW.x1) / 2 * s;
+            view.oy = (top + bottom) / 2 + (VIEW.y0 + VIEW.y1) / 2 * s;
+
+            buildBackground();
+            rebuildStock();
+        }
+
+        function buildBackground() {
+            bg.width = Math.floor(W * DPR);
+            bg.height = Math.floor(H * DPR);
+            const b = bg.getContext('2d');
+            b.setTransform(DPR, 0, 0, DPR, 0, 0);
+            const s = view.s;
+
+            // machine table
+            const tg = b.createLinearGradient(0, 0, 0, H);
+            tg.addColorStop(0, '#343a42');
+            tg.addColorStop(1, '#262b31');
+            b.fillStyle = tg;
+            b.fillRect(0, 0, W, H);
+
+            // T-slots (every 63 mm)
+            for (let y = -63 * 8; y < 63 * 12; y += 63) {
+                const top = sy(y + 9), h = 18 * s;
+                if (top > H || top + h < 0) continue;
+                b.fillStyle = '#15181c';
+                b.fillRect(0, top, W, h);
+                b.fillStyle = 'rgba(255,255,255,0.07)';
+                b.fillRect(0, top + h, W, 1.5);
+                b.fillStyle = 'rgba(0,0,0,0.4)';
+                b.fillRect(0, top - 1.5, W, 1.5);
+            }
+
+            // subtle coolant stains / wear
+            for (let i = 0; i < 40; i++) {
+                const x = Math.random() * W, y = Math.random() * H, r = 20 + Math.random() * 90;
+                const g = b.createRadialGradient(x, y, 0, x, y, r);
+                g.addColorStop(0, 'rgba(120,140,160,0.05)');
+                g.addColorStop(1, 'rgba(120,140,160,0)');
+                b.fillStyle = g;
+                b.fillRect(x - r, y - r, r * 2, r * 2);
+            }
+
+            // vise jaws (fixed + moving) along the Y edges of the plate
+            const jaw = (y0, y1) => {
+                const x = sx(-14), w = (STOCK_W + 28) * s, top = sy(y1), h = (y1 - y0) * s;
+                const g = b.createLinearGradient(0, top, 0, top + h);
+                g.addColorStop(0, '#9aa1a9');
+                g.addColorStop(0.5, '#6e757e');
+                g.addColorStop(1, '#4b5159');
+                b.fillStyle = 'rgba(0,0,0,0.45)';
+                b.fillRect(x + 5, top + 5, w, h);
+                b.fillStyle = g;
+                b.fillRect(x, top, w, h);
+                b.strokeStyle = 'rgba(0,0,0,0.5)';
+                b.strokeRect(x + 0.5, top + 0.5, w - 1, h - 1);
+                for (const bx of [40, STOCK_W - 40]) {
+                    b.fillStyle = '#2b3036';
+                    b.beginPath();
+                    b.arc(sx(bx), top + h / 2, 3.5 * s, 0, Math.PI * 2);
+                    b.fill();
+                }
+            };
+            jaw(-16, 0);
+            jaw(STOCK_H, STOCK_H + 16);
+
+            // plate drop shadow
+            b.fillStyle = 'rgba(0,0,0,0.5)';
+            b.fillRect(sx(0) + 5, sy(STOCK_H) + 6, STOCK_W * s, STOCK_H * s);
+
+            // vignette
+            const vg = b.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75);
+            vg.addColorStop(0, 'rgba(0,0,0,0)');
+            vg.addColorStop(1, 'rgba(0,0,0,0.6)');
+            b.fillStyle = vg;
+            b.fillRect(0, 0, W, H);
+        }
+
+        function paintClean(c) {
+            const g = c.getContext('2d');
+            const w = c.width, h = c.height;
+            const grad = g.createLinearGradient(0, 0, w, h);
+            grad.addColorStop(0, '#d4d9de');
+            grad.addColorStop(0.45, '#b9c0c7');
+            grad.addColorStop(1, '#cbd0d5');
+            g.fillStyle = grad;
+            g.fillRect(0, 0, w, h);
+            const n = Math.floor(h * 1.6);
+            for (let i = 0; i < n; i++) {
+                const light = Math.random() < 0.5;
+                g.fillStyle = light ? `rgba(255,255,255,${Math.random() * 0.12})` : `rgba(40,50,60,${Math.random() * 0.07})`;
+                g.fillRect(Math.random() * w * 0.4 - w * 0.2, Math.random() * h, w * (0.5 + Math.random() * 0.8), Math.max(1, DPR * 0.6));
+            }
+            const e = Math.max(1, 1.5 * DPR);
+            g.fillStyle = 'rgba(255,255,255,0.55)';
+            g.fillRect(0, 0, w, e);
+            g.fillRect(0, 0, e, h);
+            g.fillStyle = 'rgba(0,0,0,0.35)';
+            g.fillRect(0, h - e, w, e);
+            g.fillRect(w - e, 0, e, h);
+        }
+
+        function rebuildStock() {
+            const k = view.s * DPR;
+            const pw = Math.max(2, Math.round(STOCK_W * k));
+            const ph = Math.max(2, Math.round(STOCK_H * k));
+            const old = stock ? { stock, dark, light } : null;
+            clean = makeCanvas(pw, ph);
+            paintClean(clean);
+            stock = makeCanvas(pw, ph);
+            dark = makeCanvas(pw, ph);
+            light = makeCanvas(pw, ph);
+            sctx = stock.getContext('2d');
+            dctx = dark.getContext('2d');
+            lctx = light.getContext('2d');
+            sctx.drawImage(old ? old.stock : clean, 0, 0, pw, ph);
+            if (old) {
+                dctx.drawImage(old.dark, 0, 0, pw, ph);
+                lctx.drawImage(old.light, 0, 0, pw, ph);
+            }
+            for (const c of [sctx, dctx, lctx]) {
+                c.setTransform(k, 0, 0, -k, 0, ph);
+                c.lineCap = 'round';
+                c.lineJoin = 'round';
+            }
+            stockK = k;
+            stockPH = ph;
+        }
+
+        // --------------------------------- cutting ----------------------------------
+        const chips = [];
+        const MAX_CHIPS = 1600;
+
+        function spawnChips(x, y, r, count, speedMin, speedMax) {
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const sp = speedMin + Math.random() * (speedMax - speedMin);
+                // clockwise spindle (M3) seen from above -> tangent (sin a, -cos a)
+                const spread = (Math.random() - 0.5) * 0.9;
+                const vxx = Math.sin(a + spread) * sp, vyy = -Math.cos(a + spread) * sp;
+                chips.push({
+                    x: x + Math.cos(a) * r, y: y + Math.sin(a) * r,
+                    vx: vxx, vy: vyy,
+                    a: Math.random() * Math.PI * 2,
+                    va: (Math.random() - 0.5) * 30,
+                    len: 0.6 + Math.random() * 1.2,
+                    b: (Math.random() * 3) | 0,
+                    life: 22 + Math.random() * 10
+                });
+            }
+            if (chips.length > MAX_CHIPS) chips.splice(0, chips.length - MAX_CHIPS);
+        }
+
+        function onStock(x, y, r) {
+            return x > -r && x < STOCK_W + r && y > -r && y < STOCK_H + r;
+        }
+
+        let faceAcc = 0;
+
+        function cut(x0, y0, z0, x1, y1, z1) {
+            const zmin = Math.min(z0, z1);
+            if (zmin >= 0 || toolChange) return;
+            const tool = TOOLS[M.tool];
+            const dxy = Math.hypot(x1 - x0, y1 - y0);
+            if (tool.type === 'vbit') {
+                if (!onStock(x1, y1, 0)) return;
+                const r = -zmin; // 90 deg V: width = 2 * depth
+                M.cutting = true;
+                dctx.fillStyle = dctx.strokeStyle = 'rgba(36,40,46,0.93)';
+                lctx.fillStyle = lctx.strokeStyle = 'rgba(250,252,255,0.8)';
+                if (dxy < 1e-4) {
+                    dctx.beginPath();
+                    dctx.arc(x1, y1, r, 0, Math.PI * 2);
+                    dctx.fill();
+                    lctx.lineWidth = r * 0.3;
+                    lctx.beginPath();
+                    lctx.arc(x1 + r * 0.15, y1 - r * 0.15, r * 0.55, -2.4, 0.8);
+                    lctx.stroke();
+                } else {
+                    dctx.lineWidth = r * 2;
+                    dctx.beginPath();
+                    dctx.moveTo(x0, y0);
+                    dctx.lineTo(x1, y1);
+                    dctx.stroke();
+                    const o = r * 0.38;
+                    lctx.lineWidth = r * 0.5;
+                    lctx.beginPath();
+                    lctx.moveTo(x0 + o, y0 - o);
+                    lctx.lineTo(x1 + o, y1 - o);
+                    lctx.stroke();
+                    if (Math.random() < dxy / 0.5) spawnChips(x1, y1, r, 1 + (Math.random() < dxy ? 1 : 0), 60, 180);
+                }
+            } else {
+                const R = tool.dia / 2;
+                if (!onStock(x1, y1, R)) return;
+                M.cutting = true;
+                const dir = Math.atan2(y1 - y0, x1 - x0);
+                faceAcc += dxy;
+                const n = Math.floor(faceAcc / 1.2);
+                if (n <= 0 && dxy > 0) return;
+                faceAcc -= n * 1.2;
+                const steps = Math.max(1, n);
+                for (let i = 1; i <= steps; i++) {
+                    const t = i / steps;
+                    faceStamp(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, dir, R);
+                }
+                if (Math.random() < 0.6) spawnChips(x1, y1, R, 1 + (Math.random() * 2 | 0), 70, 200);
+                // the cutter sweeps settled chips out of its way (one gentle kick, no accumulation)
+                for (const c of chips) {
+                    const ddx = c.x - x1, ddy = c.y - y1, d2 = ddx * ddx + ddy * ddy;
+                    if (d2 < R * R && c.vx * c.vx + c.vy * c.vy < 900) {
+                        const d = Math.sqrt(d2) + 0.01;
+                        c.vx = ddx / d * 90;
+                        c.vy = ddy / d * 90;
+                    }
+                }
+            }
+        }
+
+        function faceStamp(x, y, dir, R) {
+            for (const L of [dctx, lctx]) {
+                L.save();
+                L.globalCompositeOperation = 'destination-out';
+                L.beginPath();
+                L.arc(x, y, R, 0, Math.PI * 2);
+                L.fill();
+                L.restore();
+            }
+            sctx.save();
+            sctx.beginPath();
+            sctx.arc(x, y, R, 0, Math.PI * 2);
+            sctx.clip();
+            sctx.setTransform(1, 0, 0, 1, 0, 0);
+            sctx.drawImage(clean, 0, 0);
+            sctx.fillStyle = 'rgba(255,255,255,0.10)';
+            sctx.fillRect(0, 0, stock.width, stock.height);
+            sctx.setTransform(stockK, 0, 0, -stockK, 0, stockPH);
+            // trailing-edge insert marks -> classic face-mill arc pattern
+            sctx.lineWidth = 0.35;
+            sctx.strokeStyle = 'rgba(70,80,92,0.16)';
+            sctx.beginPath();
+            sctx.arc(x, y, R * 0.985, dir + Math.PI - 1.25, dir + Math.PI + 1.25);
+            sctx.stroke();
+            sctx.strokeStyle = 'rgba(255,255,255,0.22)';
+            sctx.beginPath();
+            sctx.arc(x, y, R * 0.965, dir + Math.PI - 1.1, dir + Math.PI + 1.1);
+            sctx.stroke();
+            sctx.restore();
+        }
+
+        function updateChips(dt) {
+            const fr = Math.exp(-5.5 * dt);
+            for (let i = chips.length - 1; i >= 0; i--) {
+                const c = chips[i];
+                c.x += c.vx * dt;
+                c.y += c.vy * dt;
+                c.vx *= fr;
+                c.vy *= fr;
+                c.a += c.va * dt;
+                c.va *= fr;
+                c.life -= dt;
+                if (c.life <= 0) chips.splice(i, 1);
+            }
+        }
+
+        // --------------------------------- rendering ---------------------------------
+        const CHIP_COLORS = ['#f4f7fa', '#c3cad2', '#8e98a3'];
+
+        function drawChips() {
+            const s = view.s;
+            ctx.lineWidth = Math.max(1, 0.35 * s);
+            ctx.lineCap = 'round';
+            for (let b = 0; b < 3; b++) {
+                ctx.strokeStyle = CHIP_COLORS[b];
+                ctx.beginPath();
+                for (const c of chips) {
+                    if (c.b !== b) continue;
+                    const X = sx(c.x), Y = sy(c.y), r = c.len * s * 0.5;
+                    ctx.moveTo(X + Math.cos(c.a) * r, Y + Math.sin(c.a) * r);
+                    ctx.arc(X, Y, r, c.a, c.a + 2.2);
+                }
+                ctx.stroke();
+            }
+            // fading chips near end of life
+            ctx.globalAlpha = 1;
+        }
+
+        function drawWCS() {
+            const X = sx(0), Y = sy(0), L = 16 * view.s;
+            ctx.save();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ff4d4d';
+            ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + L, Y); ctx.stroke();
+            ctx.strokeStyle = '#3ddc84';
+            ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X, Y - L); ctx.stroke();
+            ctx.fillStyle = '#ff4d4d';
+            ctx.beginPath(); ctx.moveTo(X + L + 5, Y); ctx.lineTo(X + L - 2, Y - 3.5); ctx.lineTo(X + L - 2, Y + 3.5); ctx.fill();
+            ctx.fillStyle = '#3ddc84';
+            ctx.beginPath(); ctx.moveTo(X, Y - L - 5); ctx.lineTo(X - 3.5, Y - L + 2); ctx.lineTo(X + 3.5, Y - L + 2); ctx.fill();
+            ctx.fillStyle = '#ffd479';
+            ctx.beginPath(); ctx.arc(X, Y, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.font = '10px Consolas, monospace';
+            ctx.fillStyle = 'rgba(20,24,30,0.85)';
+            ctx.fillText('G54', X + 4, Y - 5);
+            ctx.restore();
+        }
+
+        function drawPaths(t) {
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.setLineDash([6, 5]);
+            ctx.lineDashOffset = -t * 0.03;
+            ctx.lineWidth = 1.6;
+            let order = 1;
+            for (const j of queue) {
+                if (j.preview) {
+                    ctx.strokeStyle = 'rgba(255,190,60,0.9)';
+                    ctx.beginPath();
+                    j.preview.forEach((p, i) => i ? ctx.lineTo(sx(p.x), sy(p.y)) : ctx.moveTo(sx(p.x), sy(p.y)));
+                    ctx.stroke();
+                    label(order, j.preview[0]);
+                    order++;
+                } else if (j.previewDot) {
+                    ctx.strokeStyle = 'rgba(255,190,60,0.9)';
+                    ctx.beginPath();
+                    ctx.arc(sx(j.previewDot.x), sy(j.previewDot.y), 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    label(order, j.previewDot);
+                    order++;
+                }
+            }
+            if (drawing && drawing.pts.length > 1) {
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'rgba(80,220,255,0.95)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                drawing.pts.forEach((p, i) => i ? ctx.lineTo(sx(p.x), sy(p.y)) : ctx.moveTo(sx(p.x), sy(p.y)));
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            function label(n, p) {
+                ctx.save();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(255,190,60,0.95)';
+                ctx.beginPath();
+                ctx.arc(sx(p.x) - 9, sy(p.y) - 9, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#1b1400';
+                ctx.font = 'bold 9px Consolas, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(String(n), sx(p.x) - 9, sy(p.y) - 8.5);
+                ctx.restore();
+            }
+        }
+
+        function drawCursor() {
+            if (!hover) return;
+            const p = toMM(hover.x, hover.y);
+            if (p.x < 0 || p.x > STOCK_W || p.y < 0 || p.y > STOCK_H) return;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,160,255,0.35)';
+            ctx.setLineDash([3, 4]);
+            ctx.beginPath();
+            ctx.moveTo(sx(0), hover.y); ctx.lineTo(sx(STOCK_W), hover.y);
+            ctx.moveTo(hover.x, sy(0)); ctx.lineTo(hover.x, sy(STOCK_H));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const txt = 'X' + p.x.toFixed(3) + '  Y' + p.y.toFixed(3);
+            ctx.font = '11px Consolas, monospace';
+            const w = ctx.measureText(txt).width + 10;
+            let lx = hover.x + 12, ly = hover.y + 14;
+            if (lx + w > W - 4) lx = hover.x - w - 12;
+            ctx.fillStyle = 'rgba(8,14,22,0.85)';
+            ctx.fillRect(lx, ly, w, 17);
+            ctx.fillStyle = '#7cc4ff';
+            ctx.fillText(txt, lx + 5, ly + 12);
+            ctx.restore();
+        }
+
+        function drawHead() {
+            const s = view.s;
+            const X = sx(M.x), Y = sy(M.y);
+            const zc = Math.max(-2, Math.min(M.z, 60));
+            const k = 1 + zc * 0.006;
+            const hr = 21 * s * k;
+            let shownTool = TOOLS[M.tool];
+            let alpha = 1;
+            if (toolChange) {
+                const p = toolChange.p;
+                shownTool = TOOLS[p < 0.5 ? toolChange.from : toolChange.to];
+                alpha = p < 0.5 ? 1 - p * 2 : p * 2 - 1;
+            }
+            const tr = shownTool.dia / 2 * s * k;
+
+            ctx.save();
+            // shadow grows and shifts with Z height
+            const so = (3 + Math.max(zc, 0) * 0.4) * s;
+            ctx.fillStyle = `rgba(0,0,0,${0.32 - Math.max(zc, 0) * 0.003})`;
+            ctx.beginPath();
+            ctx.arc(X + so, Y + so, Math.max(hr, tr) * 1.03, 0, Math.PI * 2);
+            ctx.fill();
+
+            // tool
+            ctx.globalAlpha = alpha;
+            if (shownTool.type === 'face') {
+                ctx.fillStyle = 'rgba(58,64,74,0.92)';
+                ctx.beginPath();
+                ctx.arc(X, Y, tr, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(200,210,220,0.5)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                for (let i = 0; i < 5; i++) {
+                    const a = -M.spin + i * Math.PI * 2 / 5;
+                    const cx = X + Math.cos(a) * tr * 0.86, cy = Y + Math.sin(a) * tr * 0.86;
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    ctx.rotate(a);
+                    ctx.fillStyle = '#d9b44a';
+                    ctx.fillRect(-tr * 0.1, -tr * 0.1, tr * 0.2, tr * 0.2);
+                    ctx.restore();
+                    ctx.fillStyle = 'rgba(20,24,30,0.8)';
+                    ctx.beginPath();
+                    ctx.arc(X + Math.cos(a + 0.35) * tr * 0.72, Y + Math.sin(a + 0.35) * tr * 0.72, tr * 0.1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            // holder (translucent, we look "through" the spindle nose)
+            const hg = ctx.createRadialGradient(X - hr * 0.35, Y - hr * 0.35, hr * 0.1, X, Y, hr);
+            hg.addColorStop(0, 'rgba(150,160,172,0.5)');
+            hg.addColorStop(1, 'rgba(40,46,54,0.55)');
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = hg;
+            ctx.beginPath();
+            ctx.arc(X, Y, hr, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(215,225,236,0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+            ctx.beginPath();
+            ctx.arc(X, Y, hr * 0.55, 0, Math.PI * 2);
+            ctx.stroke();
+
+            if (shownTool.type === 'vbit') {
+                ctx.globalAlpha = alpha;
+                const vg = ctx.createRadialGradient(X - tr * 0.3, Y - tr * 0.3, 0, X, Y, tr);
+                vg.addColorStop(0, '#fff1b8');
+                vg.addColorStop(1, '#b8860b');
+                ctx.fillStyle = vg;
+                ctx.beginPath();
+                ctx.arc(X, Y, Math.max(tr, 2.5), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(60,40,0,0.8)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 2; i++) {
+                    const a = -M.spin + i * Math.PI;
+                    ctx.beginPath();
+                    ctx.moveTo(X, Y);
+                    ctx.lineTo(X + Math.cos(a) * Math.max(tr, 2.5), Y + Math.sin(a) * Math.max(tr, 2.5));
+                    ctx.stroke();
+                }
+            }
+            // rotation blur ring
+            if (M.rpm > 300) {
+                ctx.globalAlpha = Math.min(0.5, M.rpm / 20000) * alpha;
+                ctx.strokeStyle = shownTool.type === 'face' ? '#e0c060' : '#fff3c4';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(X, Y, Math.max(tr, 2.5) + 1.5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+
+            // coolant nozzle mist when cutting
+            if (M.cutting && Math.random() < 0.7) {
+                ctx.fillStyle = 'rgba(160,210,255,0.10)';
+                ctx.beginPath();
+                ctx.arc(X + (Math.random() - 0.5) * hr, Y + (Math.random() - 0.5) * hr, hr * (0.3 + Math.random() * 0.4), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // laser crosshair
+            ctx.strokeStyle = 'rgba(255,60,60,0.9)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(X - 6, Y); ctx.lineTo(X + 6, Y);
+            ctx.moveTo(X, Y - 6); ctx.lineTo(X, Y + 6);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function render(t) {
+            ctx.drawImage(bg, 0, 0, W, H);
+            const X0 = sx(0), Y0 = sy(STOCK_H), PW = STOCK_W * view.s, PH = STOCK_H * view.s;
+            ctx.drawImage(stock, X0, Y0, PW, PH);
+            ctx.drawImage(dark, X0, Y0, PW, PH);
+            ctx.drawImage(light, X0, Y0, PW, PH);
+            drawWCS();
+            drawChips();
+            drawPaths(t);
+            drawHead();
+            drawCursor();
+        }
+
+        // ---------------------------------- HUD / DRO ----------------------------------
+        const el = id => document.getElementById(id);
+        const dom = {
+            X: el('dX'), Y: el('dY'), Z: el('dZ'), F: el('dF'), S: el('dS'), T: el('dT'), Tn: el('dTname'),
+            FO: el('dFO'), cyc: el('dCyc'), cnt: el('dCnt'), load: el('dLoad'), loadTxt: el('dLoadTxt'),
+            status: el('dstatus'), queue: el('dQueue'), gcode: el('gcode')
+        };
+        const domCache = new Map();
+
+        function setText(node, txt) {
+            if (domCache.get(node) !== txt) {
+                domCache.set(node, txt);
+                node.textContent = txt;
+            }
+        }
+
+        function fmtTime(sec) {
+            const m = Math.floor(sec / 60), s = sec - m * 60;
+            return String(m).padStart(2, '0') + ':' + s.toFixed(1).padStart(4, '0');
+        }
+
+        function updateHUD() {
+            setText(dom.X, f3(M.x));
+            setText(dom.Y, f3(M.y));
+            setText(dom.Z, f3(M.z));
+            setText(dom.F, (M.feed ? Math.round(M.feed) : 0) + (M.rapid && M.feed ? ' RAPID' : ' mm/min'));
+            setText(dom.S, Math.round(M.rpm) + ' rpm');
+            setText(dom.T, 'T' + M.tool);
+            setText(dom.Tn, TOOLS[M.tool].name);
+            setText(dom.FO, Math.round(feedOverride * 100) + '%');
+            setText(dom.cyc, fmtTime(cur ? (performance.now() - cycleStart) / 1000 : cycleTime));
+            setText(dom.cnt, String(partCount));
+            const target = M.cutting ? (M.tool === 2 ? 0.62 : 0.3) + Math.random() * 0.12 : (M.rpm > 0 ? 0.04 : 0);
+            M.load += (target - M.load) * 0.15;
+            const pct = Math.round(M.load * 100);
+            setText(dom.loadTxt, pct + '%');
+            dom.load.style.width = Math.min(100, pct) + '%';
+
+            let st = 'IDLE', cls = '';
+            if (estop) { st = 'E-STOP — RESET'; cls = 'estop'; }
+            else if (hold) { st = 'FEED HOLD'; cls = 'hold'; }
+            else if (toolChange) { st = 'TOOL CHANGE'; cls = 'tool'; }
+            else if (waitingSpindle) { st = 'SPINDLE UP'; cls = 'tool'; }
+            else if (cur) { st = 'RUNNING'; cls = 'run'; }
+            setText(dom.status, st);
+            if (dom.status.className !== cls) dom.status.className = cls;
+            setText(dom.queue, 'QUEUE ' + queue.length);
+            renderConsole();
+        }
+
+        const ROWS = 18;
+        let shownLine = -1;
+
+        function highlight(txt) {
+            const c = txt.indexOf('(');
+            let code = c >= 0 ? txt.slice(0, c) : txt;
+            const comment = c >= 0 ? txt.slice(c) : '';
+            code = code.replace(/\b(G\d+)/g, '<span class="g">$1</span>').replace(/\b([MT]\d+)/g, '<span class="m">$1</span>');
+            return code + (comment ? '<span class="c">' + comment.replace(/</g, '&lt;') + '</span>' : '');
+        }
+
+        function renderConsole() {
+            const g = currentLineGlobal();
+            if (g === shownLine && !consoleDirty) return;
+            shownLine = g;
+            consoleDirty = false;
+            const endAll = progBase + programLines.length;
+            let start = Math.max(progBase, g - 5);
+            const end = Math.min(endAll, start + ROWS);
+            start = Math.max(progBase, end - ROWS);
+            let html = '';
+            for (let i = start; i < end; i++) {
+                const cls = i === g ? 'cur' : i < g ? 'done' : '';
+                html += '<div class="' + cls + '"><span class="ln">' + (i + 1) + '</span>' + highlight(programLines[i - progBase]) + '</div>';
+            }
+            dom.gcode.innerHTML = html;
+        }
+
+        const toastEl = el('toast');
+        const hintEl = el('hint');
+
+        function toast(msg) {
+            toastEl.textContent = msg;
+            toastEl.style.opacity = 1;
+            clearTimeout(toast.t);
+            toast.t = setTimeout(() => { toastEl.style.opacity = 0; }, 1800);
+        }
+        setTimeout(() => hintEl.classList.add('hidden'), 10000);
+
+        // ------------------------------------ sound ------------------------------------
+        const Sound = {
+            ac: null, on: false,
+            init() {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return false;
+                const ac = this.ac = new AC();
+                this.master = ac.createGain();
+                this.master.gain.value = 0;
+                this.master.connect(ac.destination);
+
+                this.lp = ac.createBiquadFilter();
+                this.lp.type = 'lowpass';
+                this.lp.frequency.value = 2200;
+                this.spGain = ac.createGain();
+                this.spGain.gain.value = 0;
+                this.lp.connect(this.spGain).connect(this.master);
+                this.osc = ac.createOscillator();
+                this.osc.type = 'sawtooth';
+                this.osc2 = ac.createOscillator();
+                this.osc2.type = 'sine';
+                this.osc.connect(this.lp);
+                this.osc2.connect(this.lp);
+
+                const len = ac.sampleRate * 2;
+                const buf = ac.createBuffer(1, len, ac.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+                this.noise = ac.createBufferSource();
+                this.noise.buffer = buf;
+                this.noise.loop = true;
+                this.bp = ac.createBiquadFilter();
+                this.bp.type = 'bandpass';
+                this.bp.frequency.value = 3200;
+                this.bp.Q.value = 0.9;
+                this.cutGain = ac.createGain();
+                this.cutGain.gain.value = 0;
+                this.noise.connect(this.bp).connect(this.cutGain).connect(this.master);
+
+                this.axis = ac.createOscillator();
+                this.axis.type = 'triangle';
+                this.axisGain = ac.createGain();
+                this.axisGain.gain.value = 0;
+                this.axis.connect(this.axisGain).connect(this.master);
+
+                this.osc.start();
+                this.osc2.start();
+                this.noise.start();
+                this.axis.start();
+                return true;
+            },
+            toggle() {
+                if (!this.ac && !this.init()) return;
+                this.on = !this.on;
+                this.ac.resume();
+                this.master.gain.setTargetAtTime(this.on ? 0.6 : 0, this.ac.currentTime, 0.05);
+            },
+            update() {
+                if (!this.on) return;
+                const t = this.ac.currentTime;
+                const hz = Math.max(20, M.rpm / 60);
+                this.osc.frequency.setTargetAtTime(hz * 2, t, 0.03);
+                this.osc2.frequency.setTargetAtTime(hz, t, 0.03);
+                this.spGain.gain.setTargetAtTime(M.rpm > 50 ? 0.035 + 0.05 * M.rpm / 18000 : 0, t, 0.05);
+                this.cutGain.gain.setTargetAtTime(M.cutting ? 0.05 + M.load * 0.25 : 0, t, 0.04);
+                const moving = cur && !hold && !estop && M.feed > 0;
+                this.axis.frequency.setTargetAtTime(90 + Math.min(M.feed, RAPID) / RAPID * 380, t, 0.05);
+                this.axisGain.gain.setTargetAtTime(moving ? (M.rapid ? 0.05 : 0.018) : 0, t, 0.05);
+            }
+        };
+
+        // ------------------------------------ input ------------------------------------
+        let drawing = null;
+        let hover = null;
+
+        function clampToStock(p) {
+            return { x: Math.max(1.5, Math.min(STOCK_W - 1.5, p.x)), y: Math.max(1.5, Math.min(STOCK_H - 1.5, p.y)) };
+        }
+
+        function rdp(pts, eps) {
+            if (pts.length < 3) return pts.slice();
+            const keep = new Uint8Array(pts.length);
+            keep[0] = keep[pts.length - 1] = 1;
+            const stack = [[0, pts.length - 1]];
+            while (stack.length) {
+                const [a, b] = stack.pop();
+                const A = pts[a], B = pts[b];
+                const dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy);
+                let maxD = 0, idx = -1;
+                for (let i = a + 1; i < b; i++) {
+                    const P = pts[i];
+                    const d = L < 1e-6 ? Math.hypot(P.x - A.x, P.y - A.y) : Math.abs(dy * P.x - dx * P.y + B.x * A.y - B.y * A.x) / L;
+                    if (d > maxD) { maxD = d; idx = i; }
+                }
+                if (maxD > eps && idx > 0) {
+                    keep[idx] = 1;
+                    stack.push([a, idx], [idx, b]);
+                }
+            }
+            return pts.filter((_, i) => keep[i]);
+        }
+
+        canvas.addEventListener('pointerdown', e => {
+            const p = toMM(e.clientX, e.clientY);
+            if (p.x < 0 || p.x > STOCK_W || p.y < 0 || p.y > STOCK_H) return;
+            if (estop) { toast('E-STOP is latched — press CYCLE START / E to reset'); return; }
+            drawing = { pts: [clampToStock(p)], t0: performance.now(), len: 0 };
+            canvas.setPointerCapture(e.pointerId);
+        });
+
+        canvas.addEventListener('pointermove', e => {
+            hover = e.pointerType === 'mouse' ? { x: e.clientX, y: e.clientY } : null;
+            if (!drawing) return;
+            const p = clampToStock(toMM(e.clientX, e.clientY));
+            const last = drawing.pts[drawing.pts.length - 1];
+            const d = Math.hypot(p.x - last.x, p.y - last.y);
+            if (d >= 0.7) {
+                drawing.pts.push(p);
+                drawing.len += d;
+            }
+        });
+
+        function finishDrawing() {
+            if (!drawing) return;
+            const d = drawing;
+            drawing = null;
+            if (d.len < 2.5 && performance.now() - d.t0 < 450) {
+                if (enqueue(buildDrillJob(d.pts[0]))) toast('Spot drill queued — G81 X' + f3(d.pts[0].x) + ' Y' + f3(d.pts[0].y));
+            } else if (d.pts.length >= 2) {
+                const pts = rdp(d.pts, 0.25);
+                if (enqueue(buildPathJob(pts))) toast('Toolpath queued — ' + pts.length + ' points, ' + d.len.toFixed(1) + ' mm');
+            }
+        }
+        canvas.addEventListener('pointerup', finishDrawing);
+        canvas.addEventListener('pointercancel', () => { drawing = null; });
+        canvas.addEventListener('pointerleave', () => { hover = null; });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            changeFeed(e.deltaY < 0 ? 0.1 : -0.1);
+        }, { passive: false });
+
+        function changeFeed(d) {
+            feedOverride = Math.max(0.1, Math.min(3.0, Math.round((feedOverride + d) * 10) / 10));
+            toast('Feed override ' + Math.round(feedOverride * 100) + '%');
+        }
+
+        function cycleStartPressed() {
+            if (estop) { resetMachine(); return; }
+            if (hold) { hold = false; toast('Cycle start'); return; }
+            if (!cur && !queue.length) toast('Queue empty — drag on the plate to program a toolpath');
+        }
+
+        function feedHoldPressed() {
+            if (estop) return;
+            if (cur) { hold = !hold; toast(hold ? 'Feed hold' : 'Cycle start'); }
+        }
+
+        function hhmmNow() {
+            const d = new Date();
+            return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        }
+
+        function eStopPressed() {
+            if (estop) { resetMachine(); return; }
+            estop = true;
+            hold = false;
+            queue = [];
+            cur = null;
+            toolChange = null;
+            moveTimer = 0;
+            drawing = null;
+            M.rpmTarget = 0;
+            appendProgram(['(*** EMERGENCY STOP ***)']);
+            lastLineGlobal = progBase + programLines.length - 1;
+            el('bEstop').classList.add('latched');
+            toast('EMERGENCY STOP — press again or CYCLE START to reset');
+        }
+
+        function resetMachine() {
+            estop = false;
+            el('bEstop').classList.remove('latched');
+            const j = new Job('RESET - HOME Z', 'sys');
+            j.rapidZ(CLEAR_Z);
+            j.rapidXY(PARK.x, PARK.y);
+            queue.push(j);
+            enqueueTime(buildTimeJob(hhmmNow(), true));
+            toast('Reset — re-engraving the time');
+        }
+
+        function faceAll() {
+            if (estop) return;
+            queue = queue.filter(j => j.kind !== 'time' && j.kind !== 'mark' && j.kind !== 'face');
+            queue.push(buildFaceAllJob());
+            queue.push(buildTimeJob(hhmmNow(), false));
+            queue.push(buildMarkJob());
+            toast('Full plate facing queued');
+        }
+
+        el('bStart').addEventListener('click', cycleStartPressed);
+        el('bHold').addEventListener('click', feedHoldPressed);
+        el('bFminus').addEventListener('click', () => changeFeed(-0.1));
+        el('bFplus').addEventListener('click', () => changeFeed(0.1));
+        el('bTime').addEventListener('click', () => { if (!estop) { enqueueTime(buildTimeJob(hhmmNow(), true)); toast('Face + engrave time queued'); } });
+        el('bFace').addEventListener('click', faceAll);
+        el('bEstop').addEventListener('click', eStopPressed);
+        el('bSound').addEventListener('click', () => {
+            Sound.toggle();
+            el('bSound').textContent = Sound.on ? 'SOUND ON' : 'SOUND OFF';
+            el('bSound').classList.toggle('on', Sound.on);
+        });
+        // keep focus off the buttons so SPACE stays "feed hold" instead of re-clicking the last button
+        document.querySelectorAll('button').forEach(b => b.addEventListener('click', () => b.blur()));
+
+        window.addEventListener('keydown', e => {
+            if (e.repeat) return;
+            switch (e.code) {
+                case 'Space': e.preventDefault(); if (hold || estop) cycleStartPressed(); else feedHoldPressed(); break;
+                case 'KeyE': eStopPressed(); break;
+                case 'KeyF': faceAll(); break;
+                case 'KeyT': el('bTime').click(); break;
+                case 'KeyS': el('bSound').click(); break;
+                case 'Equal': case 'NumpadAdd': changeFeed(0.1); break;
+                case 'Minus': case 'NumpadSubtract': changeFeed(-0.1); break;
+                case 'KeyH': hintEl.classList.toggle('hidden'); break;
+            }
+        });
+
+        // --------------------------------- clock & boot ---------------------------------
+        let lastHHMM = hhmmNow();
+
+        function updateTime() {
+            const now = new Date();
+            const options = {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+            };
+            el('datetime').textContent = now.toLocaleString('en-GB', options);
+            const hhmm = hhmmNow();
+            if (hhmm !== lastHHMM) {
+                lastHHMM = hhmm;
+                if (!estop) enqueueTime(buildTimeJob(hhmm, true));
+            }
+        }
+
+        layout();
+        window.addEventListener('resize', () => {
+            clearTimeout(layout.t);
+            layout.t = setTimeout(layout, 150);
+        });
+
+        appendProgram([
+            '%',
+            'O07700 (SERKANKOSE77.ME)',
+            '(STOCK 6061-T6 320 X 180 X 20)',
+            '(G54 = LOWER LEFT CORNER, Z0 = TOP)',
+            'G21 G90 G17 G40 G49 G80 G54'
+        ]);
+        lastLineGlobal = progBase + programLines.length - 1;
+        queue.push(buildTimeJob(lastHHMM, false));
+        queue.push(buildMarkJob());
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        let lastT = performance.now();
+        function frame(now) {
+            const dt = Math.min((now - lastT) / 1000, 0.05);
+            lastT = now;
+            machineUpdate(dt);
+            updateChips(dt);
+            render(now);
+            updateHUD();
+            Sound.update();
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    </script>
+</body>
+
+</html>

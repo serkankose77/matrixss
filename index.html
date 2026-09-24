@@ -12,44 +12,97 @@
             padding: 0;
             height: 100%;
             overflow: hidden;
-            background: #000;
+            background: black;
         }
 
         iframe {
-            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             border: none;
+            display: block;
         }
     </style>
+    <script>
+        // List of all landing pages the selector can pick from
+        const PAGES = [
+            "index1.html", "index2.html", "index3.html",
+            "index4.html", "index5.html", "index6.html",
+            "index7.html", "index8.html", "index9.html",
+            "index10.html", "index11.html", "index12.html",
+            "index13.html", "index14.html", "index15.html",
+            "index16.html", "index17.html"
+        ];
+
+        const BAG_KEY = "matrixss.bag";
+        const LAST_KEY = "matrixss.last";
+
+        function shuffle(list) {
+            for (let i = list.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [list[i], list[j]] = [list[j], list[i]];
+            }
+            return list;
+        }
+
+        // Explicit choice via ?p=13, ?page=index13.html or #13 (handy for testing / sharing)
+        function getForcedPage() {
+            const params = new URLSearchParams(location.search);
+            const wanted = params.get("p") || params.get("page") || location.hash.slice(1);
+            if (!wanted) return null;
+            const name = /^\d+$/.test(wanted) ? "index" + wanted + ".html" : wanted;
+            return PAGES.includes(name) ? name : null;
+        }
+
+        // "Shuffle bag": every page is shown once before any page repeats,
+        // and the same page never comes up twice in a row.
+        function getRandomFile() {
+            const forced = getForcedPage();
+            if (forced) return forced;
+
+            try {
+                const last = localStorage.getItem(LAST_KEY);
+                let bag = JSON.parse(localStorage.getItem(BAG_KEY) || "[]");
+                bag = Array.isArray(bag) ? bag.filter((p, i) => PAGES.includes(p) && bag.indexOf(p) === i) : [];
+
+                if (bag.length === 0) {
+                    bag = shuffle(PAGES.slice());
+                    if (bag.length > 1 && bag[bag.length - 1] === last) {
+                        [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
+                    }
+                }
+
+                const page = bag.pop();
+                localStorage.setItem(BAG_KEY, JSON.stringify(bag));
+                localStorage.setItem(LAST_KEY, page);
+                return page;
+            } catch (e) {
+                // storage blocked (private mode, file://, ...): plain uniform random
+                return PAGES[Math.floor(Math.random() * PAGES.length)];
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const iframe = document.createElement("iframe");
+            iframe.src = getRandomFile();
+            iframe.title = "serkankose77.me";
+            iframe.allow = "fullscreen; autoplay";
+            iframe.addEventListener("load", function () {
+                // Give the page keyboard focus so its shortcuts work right away,
+                // and mirror its title in the browser tab.
+                try {
+                    iframe.contentWindow.focus();
+                    document.title = iframe.contentDocument.title || document.title;
+                } catch (e) { /* cross-origin (e.g. file://) */ }
+            });
+            document.body.appendChild(iframe);
+        });
+    </script>
 </head>
 
 <body>
-    <script>
-        (function () {
-            const files = [
-                "index1.html", "index2.html", "index3.html",
-                "index4.html", "index5.html", "index6.html",
-                "index7.html", "index8.html", "index9.html",
-                "index10.html", "index11.html", "index12.html"
-            ];
-
-            // Avoid showing the same page twice in a row
-            let last = null;
-            try { last = localStorage.getItem("lastLanding"); } catch (e) { }
-
-            const pool = files.filter(f => f !== last);
-            const pick = pool[Math.floor(Math.random() * pool.length)];
-
-            try { localStorage.setItem("lastLanding", pick); } catch (e) { }
-
-            const iframe = document.createElement("iframe");
-            iframe.src = pick;
-            iframe.title = "serkankose77.me";
-            iframe.allow = "autoplay";
-            document.body.appendChild(iframe);
-        })();
-    </script>
 </body>
 
 </html>
