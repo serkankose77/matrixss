@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to serkankose77.me</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background: radial-gradient(ellipse at 50% 45%, #0d1328 0%, #05060d 60%, #000 100%);
+        }
+
+        #c {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: none;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        #datetime {
+            position: absolute;
+            left: 0;
+            right: 0;
+            margin: 0;
+            text-align: center;
+            color: rgba(210, 225, 255, 0.8);
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            letter-spacing: 0.08em;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hud {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            pointer-events: none;
+            color: rgba(255, 255, 255, 0.85);
+            font: 13px/1.4 Consolas, "Courier New", monospace;
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 999px;
+            padding: 7px 16px;
+            white-space: nowrap;
+            transition: opacity 0.8s ease;
+        }
+
+        #hint {
+            bottom: 18px;
+        }
+
+        #toast {
+            top: 18px;
+            opacity: 0;
+        }
+
+        .hidden {
+            opacity: 0;
+        }
+
+        @media (max-width: 700px) {
+            .hud {
+                font-size: 11px;
+                white-space: normal;
+                width: 86%;
+                text-align: center;
+                border-radius: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+    <h1 class="sr-only">Welcome to serkankose77.me</h1>
+    <p id="datetime"></p>
+    <div id="toast" class="hud"></div>
+    <div id="hint" class="hud">Move = push particles &middot; hold = charge a vortex, release = shockwave &middot; SPACE = explode &middot; G / double-click = gravity &middot; C = colors</div>
+    <script>
+        'use strict';
+
+        // ------------------------------------------------------------------
+        // Particle clock: every glyph of the title and HH:MM:SS is sampled
+        // into points; particles are spring-bound to those points and react
+        // to the pointer. When a digit changes only that slot re-targets.
+        // ------------------------------------------------------------------
+        const TITLE = 'Welcome to serkankose77.me';
+        const FONT = '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const dateEl = document.getElementById('datetime');
+        const hintEl = document.getElementById('hint');
+        const toastEl = document.getElementById('toast');
+
+        let W = 0, H = 0, DPR = 1;
+        let timeFs = 100;
+
+        // ---------------------------- particle pool ----------------------------
+        const MAX = 24000;
+        const px = new Float32Array(MAX);
+        const py = new Float32Array(MAX);
+        const vx = new Float32Array(MAX);
+        const vy = new Float32Array(MAX);
+        const tx = new Float32Array(MAX);
+        const ty = new Float32Array(MAX);
+        const sz = new Float32Array(MAX);
+        const life = new Float32Array(MAX);
+        const floorJitter = new Float32Array(MAX);
+        const slotOf = new Int16Array(MAX).fill(-2); // -2 dead, -1 free/dying, >=0 bound to slot
+        const dead = [];
+        const freeSet = new Set();
+        for (let i = MAX - 1; i >= 0; i--) {
+            dead.push(i);
+            floorJitter[i] = Math.random() * 18;
+        }
+
+        // slot 0 = title, slots 1..8 = "HH:MM:SS"
+        const slots = [];
+        for (let i = 0; i < 9; i++) slots.push({ index: i, text: null, font: '', gap: 4, dot: 2, x: 0, y: 0, members: [] });
+
+        let intro = true;
+
+        function kill(i) {
+            slotOf[i] = -2;
+            freeSet.delete(i);
+            dead.push(i);
+        }
+
+        function release(i) {
+            slotOf[i] = -1;
+            life[i] = 1;
+            vx[i] += (Math.random() - 0.5) * 6;
+            vy[i] += (Math.random() - 0.5) * 6 - 1.5;
+            freeSet.add(i);
+        }
+
+        function acquire(slot) {
+            let i = -1;
+            if (freeSet.size) {
+                i = freeSet.values().next().value;
+                freeSet.delete(i);
+            } else if (dead.length) {
+                i = dead.pop();
+                if (intro) {
+                    px[i] = Math.random() * W;
+                    py[i] = Math.random() * H;
+                    vx[i] = 0; vy[i] = 0;
+                } else {
+                    const a = Math.random() * Math.PI * 2;
+                    const r = slot.fs * (0.3 + Math.random() * 0.5);
+                    px[i] = slot.x + Math.cos(a) * r;
+                    py[i] = slot.y + Math.sin(a) * r;
+                    vx[i] = Math.cos(a) * 4; vy[i] = Math.sin(a) * 4;
+                }
+            } else {
+                return -1;
+            }
+            slotOf[i] = slot.index;
+            life[i] = 1;
+            sz[i] = slot.dot;
+            return i;
+        }
+
+        // ------------------------------ glyph sampling --------------------------
+        const off = document.createElement('canvas');
+        const octx = off.getContext('2d', { willReadFrequently: true });
+        const glyphCache = new Map();
+
+        function samplePoints(text, font, fontSize, gap) {
+            const key = font + '|' + gap + '|' + text;
+            let pts = glyphCache.get(key);
+            if (pts) return pts;
+            octx.font = font;
+            const w = Math.ceil(octx.measureText(text).width + fontSize * 0.2) + 4;
+            const h = Math.ceil(fontSize * 1.4);
+            off.width = w;
+            off.height = h;
+            octx.font = font;
+            octx.textAlign = 'center';
+            octx.textBaseline = 'middle';
+            octx.fillStyle = '#fff';
+            octx.fillText(text, w / 2, h / 2);
+            const data = octx.getImageData(0, 0, w, h).data;
+            const out = [];
+            let row = 0;
+            for (let y = gap / 2; y < h; y += gap * 0.866, row++) {
+                const xo = (row & 1) ? gap / 2 : 0;
+                for (let x = xo + gap / 4; x < w; x += gap) {
+                    if (data[((y | 0) * w + (x | 0)) * 4 + 3] > 110) out.push(x - w / 2, y - h / 2);
+                }
+            }
+            pts = new Float32Array(out);
+            glyphCache.set(key, pts);
+            return pts;
+        }
+
+        function setSlotText(slot, text) {
+            slot.text = text;
+            const pts = samplePoints(text, slot.font, slot.fs, slot.gap);
+            const n = pts.length / 2;
+            const members = slot.members;
+            while (members.length > n) release(members.pop());
+
+            // random point order => the swarm re-forms instead of sliding
+            const order = new Uint32Array(n);
+            for (let k = 0; k < n; k++) order[k] = k;
+            for (let k = n - 1; k > 0; k--) {
+                const j = (Math.random() * (k + 1)) | 0;
+                const t = order[k]; order[k] = order[j]; order[j] = t;
+            }
+            for (let k = 0; k < n; k++) {
+                let i;
+                if (k < members.length) {
+                    i = members[k];
+                } else {
+                    i = acquire(slot);
+                    if (i < 0) break;
+                    members.push(i);
+                }
+                const j = order[k];
+                tx[i] = slot.x + pts[2 * j];
+                ty[i] = slot.y + pts[2 * j + 1];
+                sz[i] = slot.dot;
+            }
+        }
+
+        // --------------------------------- layout -------------------------------
+        function layout() {
+            DPR = Math.min(window.devicePixelRatio || 1, 2);
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = Math.floor(W * DPR);
+            canvas.height = Math.floor(H * DPR);
+            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+            octx.font = `800 100px ${FONT}`;
+            let dw = 0;
+            for (const d of '0123456789') dw = Math.max(dw, octx.measureText(d).width);
+            const cw = octx.measureText(':').width * 1.5;
+            timeFs = Math.min(W * 0.9 / ((6 * dw + 2 * cw) / 100), H * 0.34);
+            const digitW = dw * timeFs / 100;
+            const colonW = cw * timeFs / 100;
+            const timeGap = Math.max(3, timeFs / 34);
+
+            octx.font = `700 100px ${FONT}`;
+            const tw = octx.measureText(TITLE).width;
+            const titleFs = Math.min(timeFs * 0.27, W * 0.92 * 100 / tw);
+            const titleGap = Math.max(2.2, titleFs / 16);
+
+            const cy = H * 0.53;
+            const t = slots[0];
+            t.font = `700 ${titleFs}px ${FONT}`;
+            t.fs = titleFs;
+            t.gap = titleGap;
+            t.dot = titleGap * 0.72;
+            t.x = W / 2;
+            t.y = cy - timeFs * 0.62 - titleFs * 0.9;
+
+            let x = W / 2 - (6 * digitW + 2 * colonW) / 2;
+            for (let i = 0; i < 8; i++) {
+                const s = slots[i + 1];
+                const cellW = (i === 2 || i === 5) ? colonW : digitW;
+                s.x = x + cellW / 2;
+                s.y = cy;
+                s.font = `800 ${timeFs}px ${FONT}`;
+                s.fs = timeFs;
+                s.gap = timeGap;
+                s.dot = timeGap * 0.64;
+                x += cellW;
+            }
+
+            dateEl.style.top = (cy + timeFs * 0.55) + 'px';
+            dateEl.style.fontSize = Math.max(14, Math.min(28, timeFs * 0.13)) + 'px';
+
+            glyphCache.clear();
+            slots.forEach(s => {
+                const txt = s.text;
+                s.text = null;
+                if (txt !== null) setSlotText(s, txt);
+            });
+        }
+
+        function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+        let lastSecond = -1;
+        function tickClock() {
+            const now = new Date();
+            if (now.getSeconds() === lastSecond) return;
+            lastSecond = now.getSeconds();
+            const str = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+            if (slots[0].text === null) setSlotText(slots[0], TITLE);
+            for (let i = 0; i < 8; i++) {
+                if (slots[i + 1].text !== str[i]) setSlotText(slots[i + 1], str[i]);
+            }
+            dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            intro = false;
+        }
+
+        // --------------------------------- input --------------------------------
+        const mouse = { x: -1e4, y: -1e4, active: false, down: false, charge: 0 };
+        const rings = [];
+        let gravityMode = false;
+
+        function shockwave(x, y, radius, strength) {
+            const r2 = radius * radius;
+            for (let i = 0; i < MAX; i++) {
+                if (slotOf[i] === -2) continue;
+                const dx = px[i] - x;
+                const dy = py[i] - y;
+                const d2 = dx * dx + dy * dy;
+                if (d2 < r2) {
+                    const d = Math.sqrt(d2) + 0.01;
+                    const f = (1 - d / radius) * strength;
+                    vx[i] += dx / d * f;
+                    vy[i] += dy / d * f;
+                }
+            }
+            rings.push({ x, y, r: 0, max: radius * 1.2, a: 1 });
+        }
+
+        function explode() {
+            for (let i = 0; i < MAX; i++) {
+                if (slotOf[i] < 0) continue;
+                const a = Math.random() * Math.PI * 2;
+                const s = 6 + Math.random() * 26;
+                vx[i] += Math.cos(a) * s;
+                vy[i] += Math.sin(a) * s;
+            }
+        }
+
+        canvas.addEventListener('pointermove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+        });
+        canvas.addEventListener('pointerdown', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+            mouse.down = true;
+            mouse.charge = 0;
+            canvas.setPointerCapture(e.pointerId);
+        });
+        function pointerEnd(e) {
+            if (mouse.down) {
+                const R = interactionRadius();
+                shockwave(mouse.x, mouse.y, R * (1.3 + mouse.charge * 2.2), 7 + mouse.charge * 34);
+            }
+            mouse.down = false;
+            mouse.charge = 0;
+            if (e.pointerType !== 'mouse') mouse.active = false;
+        }
+        canvas.addEventListener('pointerup', pointerEnd);
+        canvas.addEventListener('pointercancel', pointerEnd);
+        canvas.addEventListener('pointerleave', () => { if (!mouse.down) mouse.active = false; });
+        canvas.addEventListener('dblclick', () => toggleGravity());
+
+        const PALETTES = [
+            { name: 'Aurora', h0: 175, h1: 300, s: 90, l: 62 },
+            { name: 'Sunset', h0: 330, h1: 430, s: 95, l: 60 },
+            { name: 'Rainbow', h0: 0, h1: 360, s: 90, l: 62 },
+            { name: 'Matrix', h0: 105, h1: 150, s: 95, l: 55 },
+            { name: 'Ice', h0: 185, h1: 225, s: 70, l: 72 },
+            { name: 'Gold', h0: 30, h1: 55, s: 95, l: 58 }
+        ];
+        let paletteIndex = 0;
+
+        function toast(msg) {
+            toastEl.textContent = msg;
+            toastEl.style.opacity = 1;
+            clearTimeout(toast.t);
+            toast.t = setTimeout(() => { toastEl.style.opacity = 0; }, 1600);
+        }
+
+        function toggleGravity() {
+            gravityMode = !gravityMode;
+            if (!gravityMode) {
+                for (let i = 0; i < MAX; i++) if (slotOf[i] >= 0) vy[i] -= 8 + Math.random() * 10;
+            }
+            toast(gravityMode ? 'Gravity ON — press G again to reassemble' : 'Gravity OFF');
+        }
+
+        window.addEventListener('keydown', e => {
+            switch (e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    explode();
+                    break;
+                case 'KeyG':
+                    toggleGravity();
+                    break;
+                case 'KeyC':
+                    paletteIndex = (paletteIndex + 1) % PALETTES.length;
+                    toast('Colors: ' + PALETTES[paletteIndex].name);
+                    break;
+                case 'KeyH':
+                    hintEl.classList.toggle('hidden');
+                    break;
+            }
+        });
+        setTimeout(() => hintEl.classList.add('hidden'), 9000);
+
+        function interactionRadius() {
+            return Math.max(80, timeFs * 0.65);
+        }
+
+        // -------------------------------- physics --------------------------------
+        function physics(step) {
+            const K = 0.045;
+            const bindDamp = Math.pow(0.84, step);
+            const looseDamp = Math.pow(0.93, step);
+            const freeDamp = Math.pow(0.975, step);
+            const R = interactionRadius() * (1 + mouse.charge * 0.8);
+            const R2 = R * R;
+            const pull = 2.2 + mouse.charge * 7;
+            const swirl = 2.4 + mouse.charge * 5;
+            const floorY = H - 4;
+
+            for (let i = 0; i < MAX; i++) {
+                const s = slotOf[i];
+                if (s === -2) continue;
+                let ax = 0, ay = 0, damp;
+
+                if (s >= 0) {
+                    if (gravityMode) {
+                        ay = 0.55;
+                        damp = freeDamp;
+                    } else {
+                        ax = (tx[i] - px[i]) * K;
+                        ay = (ty[i] - py[i]) * K;
+                        damp = bindDamp;
+                    }
+                } else {
+                    ay = 0.05;
+                    damp = freeDamp;
+                    life[i] -= 0.011 * step;
+                    if (life[i] <= 0) { kill(i); continue; }
+                }
+
+                if (mouse.active) {
+                    const dx = px[i] - mouse.x;
+                    const dy = py[i] - mouse.y;
+                    const d2 = dx * dx + dy * dy;
+                    if (d2 < R2) {
+                        const d = Math.sqrt(d2) + 0.001;
+                        const f = 1 - d / R;
+                        if (mouse.down) {
+                            ax += (-dx * pull - dy * swirl) / d * f;
+                            ay += (-dy * pull + dx * swirl) / d * f;
+                            damp = looseDamp;
+                        } else {
+                            ax += dx / d * f * f * 7;
+                            ay += dy / d * f * f * 7;
+                        }
+                    }
+                }
+
+                let nvx = (vx[i] + ax * step) * damp;
+                let nvy = (vy[i] + ay * step) * damp;
+                const sp2 = nvx * nvx + nvy * nvy;
+                if (sp2 > 3600) {
+                    const k = 60 / Math.sqrt(sp2);
+                    nvx *= k; nvy *= k;
+                }
+                vx[i] = nvx;
+                vy[i] = nvy;
+                px[i] += nvx * step;
+                py[i] += nvy * step;
+
+                if (gravityMode && s >= 0) {
+                    const fy = floorY - floorJitter[i];
+                    if (py[i] > fy) { py[i] = fy; vy[i] *= -0.3; vx[i] *= 0.82; }
+                    if (px[i] < 2) { px[i] = 2; vx[i] = Math.abs(vx[i]) * 0.5; }
+                    if (px[i] > W - 2) { px[i] = W - 2; vx[i] = -Math.abs(vx[i]) * 0.5; }
+                }
+            }
+        }
+
+        // -------------------------------- render ---------------------------------
+        const HUE_BUCKETS = 24;
+        const LEVELS = 4; // 0..2 speed levels for bound particles, 3 = free/dying
+        const NB = HUE_BUCKETS * LEVELS;
+        const bucketOf = new Uint8Array(MAX);
+        const order = new Int32Array(MAX);
+        const counts = new Int32Array(NB + 1);
+        const bucketColors = new Array(NB);
+
+        function buildColors(t) {
+            const p = PALETTES[paletteIndex];
+            const drift = Math.sin(t * 0.0003) * 0.5 + 0.5;
+            for (let hb = 0; hb < HUE_BUCKETS; hb++) {
+                const u = (hb / (HUE_BUCKETS - 1) + drift * 0.35) % 1;
+                const h = p.h0 + (p.h1 - p.h0) * (u < 0.5 ? u * 2 : 2 - u * 2) + (p.h0 === 0 ? t * 0.02 : 0);
+                bucketColors[hb * LEVELS + 0] = `hsl(${h % 360},${p.s}%,${p.l}%)`;
+                bucketColors[hb * LEVELS + 1] = `hsl(${(h + 15) % 360},${p.s}%,${Math.min(p.l + 12, 90)}%)`;
+                bucketColors[hb * LEVELS + 2] = `hsl(${(h + 30) % 360},100%,88%)`;
+                bucketColors[hb * LEVELS + 3] = `hsla(${h % 360},${p.s}%,${p.l}%,0.55)`;
+            }
+        }
+
+        function render(t) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0,0,0,0.32)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.globalCompositeOperation = 'source-over';
+
+            buildColors(t);
+            counts.fill(0);
+            const invW = 1 / Math.max(W, 1);
+            for (let i = 0; i < MAX; i++) {
+                const s = slotOf[i];
+                if (s === -2) continue;
+                const refX = s >= 0 ? tx[i] : px[i];
+                let hb = (refX * invW * HUE_BUCKETS) | 0;
+                hb = hb < 0 ? 0 : hb >= HUE_BUCKETS ? HUE_BUCKETS - 1 : hb;
+                let lv;
+                if (s < 0) lv = 3;
+                else {
+                    const sp = vx[i] * vx[i] + vy[i] * vy[i];
+                    lv = sp < 4 ? 0 : sp < 64 ? 1 : 2;
+                }
+                const b = hb * LEVELS + lv;
+                bucketOf[i] = b;
+                counts[b + 1]++;
+            }
+            for (let b = 0; b < NB; b++) counts[b + 1] += counts[b];
+            const cursor = counts.slice(0, NB);
+            for (let i = 0; i < MAX; i++) {
+                if (slotOf[i] === -2) continue;
+                order[cursor[bucketOf[i]]++] = i;
+            }
+            for (let b = 0; b < NB; b++) {
+                const start = counts[b], end = counts[b + 1];
+                if (start === end) continue;
+                ctx.fillStyle = bucketColors[b];
+                const free = (b % LEVELS) === 3;
+                for (let k = start; k < end; k++) {
+                    const i = order[k];
+                    const s = free ? sz[i] * life[i] : sz[i];
+                    ctx.fillRect(px[i] - s / 2, py[i] - s / 2, s, s);
+                }
+            }
+
+            // shockwave rings
+            for (let k = rings.length - 1; k >= 0; k--) {
+                const r = rings[k];
+                r.r += (r.max - r.r) * 0.12 + 2;
+                r.a *= 0.92;
+                if (r.a < 0.02) { rings.splice(k, 1); continue; }
+                ctx.strokeStyle = `rgba(200,230,255,${r.a})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // pointer reticle
+            if (mouse.active) {
+                const R = interactionRadius() * (1 + mouse.charge * 0.8);
+                ctx.save();
+                ctx.translate(mouse.x, mouse.y);
+                ctx.strokeStyle = mouse.down ? `rgba(255,120,220,${0.35 + mouse.charge * 0.5})` : 'rgba(180,220,255,0.22)';
+                ctx.lineWidth = mouse.down ? 2 : 1;
+                ctx.setLineDash(mouse.down ? [10, 8] : [3, 7]);
+                ctx.rotate(t * (mouse.down ? 0.004 : 0.0008));
+                ctx.beginPath();
+                ctx.arc(0, 0, mouse.down ? R * (1 - mouse.charge * 0.35) : R, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.fillRect(-1.5, -1.5, 3, 3);
+                ctx.restore();
+            }
+        }
+
+        // ------------------------------- main loop --------------------------------
+        layout();
+        tickClock();
+        window.addEventListener('resize', () => {
+            clearTimeout(layout.t);
+            layout.t = setTimeout(layout, 120);
+        });
+
+        let last = performance.now();
+        function frame(now) {
+            const step = Math.min((now - last) / 16.667, 3);
+            last = now;
+            tickClock();
+            if (mouse.down) mouse.charge = Math.min(1, mouse.charge + 0.012 * step);
+            physics(step);
+            render(now);
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    </script>
+</body>
+
+</html>

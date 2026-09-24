@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>serkankose77.me</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background: black;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0F0;
+            text-align: center;
+            z-index: 2;
+            pointer-events: none;
+            white-space: nowrap;
+            --glow: 0, 255, 0;
+        }
+
+        #overlay h1 {
+            position: relative;
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--fg, #0F0);
+            text-shadow: 0 0 10px rgba(var(--glow), 0.7), 0 0 20px rgba(var(--glow), 0.7);
+        }
+
+        #overlay p {
+            margin-top: 20px;
+            font-size: 24px;
+            color: var(--fg, #0F0);
+            text-shadow: 0 0 5px rgba(var(--glow), 0.9), 0 0 10px rgba(var(--glow), 0.9);
+        }
+
+        #overlay.glitch h1::before,
+        #overlay.glitch h1::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            text-shadow: none;
+        }
+
+        #overlay.glitch h1::before {
+            color: #0ff;
+            animation: g1 0.28s steps(2) infinite;
+        }
+
+        #overlay.glitch h1::after {
+            color: #f0f;
+            animation: g2 0.22s steps(2) infinite;
+        }
+
+        #overlay.glitch h1 {
+            animation: shake 0.18s steps(2) infinite;
+        }
+
+        @keyframes g1 {
+            0% {
+                clip-path: inset(0 0 62% 0);
+                transform: translate(-5px, -1px);
+            }
+
+            50% {
+                clip-path: inset(30% 0 38% 0);
+                transform: translate(4px, 1px);
+            }
+
+            100% {
+                clip-path: inset(72% 0 4% 0);
+                transform: translate(-3px, 0);
+            }
+        }
+
+        @keyframes g2 {
+            0% {
+                clip-path: inset(55% 0 12% 0);
+                transform: translate(5px, 1px);
+            }
+
+            50% {
+                clip-path: inset(8% 0 70% 0);
+                transform: translate(-4px, -1px);
+            }
+
+            100% {
+                clip-path: inset(40% 0 35% 0);
+                transform: translate(2px, 0);
+            }
+        }
+
+        @keyframes shake {
+            50% {
+                transform: translate(1px, -1px) skewX(-4deg);
+            }
+        }
+
+        #term {
+            position: absolute;
+            left: 50%;
+            bottom: 26px;
+            transform: translateX(-50%);
+            width: min(640px, 94vw);
+            z-index: 3;
+            background: rgba(0, 12, 0, 0.62);
+            border: 1px solid rgba(var(--glow), 0.35);
+            border-radius: 8px;
+            box-shadow: 0 0 24px rgba(var(--glow), 0.18), inset 0 0 30px rgba(0, 0, 0, 0.6);
+            padding: 10px 14px 12px;
+            color: var(--fg, #0F0);
+            font-size: 15px;
+            line-height: 1.45;
+            text-shadow: 0 0 6px rgba(var(--glow), 0.6);
+            cursor: text;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            --glow: 0, 255, 0;
+        }
+
+        #term.hidden {
+            opacity: 0;
+            transform: translate(-50%, 30px);
+            pointer-events: none;
+        }
+
+        #out {
+            max-height: 11.6em;
+            overflow: hidden;
+            white-space: pre-wrap;
+            word-break: break-word;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #out .dim {
+            opacity: 0.6;
+        }
+
+        #out .err {
+            color: #ff5555;
+            text-shadow: 0 0 6px rgba(255, 60, 60, 0.6);
+        }
+
+        #out .hi {
+            color: #fff;
+        }
+
+        .prompt {
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+            margin-top: 4px;
+        }
+
+        .prompt span {
+            white-space: nowrap;
+            opacity: 0.85;
+        }
+
+        #cmd {
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: inherit;
+            font: inherit;
+            text-shadow: inherit;
+            caret-color: currentColor;
+        }
+
+        #hint {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            pointer-events: none;
+            color: rgba(200, 255, 200, 0.85);
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 255, 0, 0.25);
+            border-radius: 999px;
+            padding: 6px 14px;
+            white-space: nowrap;
+            transition: opacity 0.8s ease;
+        }
+
+        #hint.hidden {
+            opacity: 0;
+        }
+
+        .rainbow {
+            animation: huecycle 6s linear infinite;
+        }
+
+        @keyframes huecycle {
+            to {
+                filter: hue-rotate(360deg);
+            }
+        }
+
+        #rabbit {
+            position: absolute;
+            z-index: 2;
+            font-size: 42px;
+            left: -80px;
+            bottom: 34%;
+            pointer-events: none;
+            filter: drop-shadow(0 0 8px #fff);
+            display: none;
+        }
+
+        #rabbit.run {
+            display: block;
+            animation: hop 4.2s linear forwards;
+        }
+
+        @keyframes hop {
+            0% {
+                left: -80px;
+                transform: translateY(0) scaleX(-1);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateY(-40px) scaleX(-1);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateY(0) scaleX(-1);
+            }
+
+            100% {
+                left: calc(100% + 80px);
+                transform: translateY(0) scaleX(-1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            #overlay h1 {
+                font-size: 32px;
+            }
+
+            #overlay p {
+                font-size: 18px;
+            }
+
+            #term {
+                font-size: 13px;
+            }
+
+            #hint {
+                white-space: normal;
+                width: 88%;
+                text-align: center;
+                border-radius: 12px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #overlay h1 {
+                font-size: 24px;
+            }
+
+            #overlay p {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="rain"></canvas>
+
+    <div id="overlay">
+        <h1 data-text="Welcome to serkankose77.me">Welcome to serkankose77.me</h1>
+        <p id="datetime">Loading time...</p>
+    </div>
+
+    <div id="term">
+        <div id="out"></div>
+        <div class="prompt"><span>guest@serkankose77:~$</span><input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="terminal command"></div>
+    </div>
+
+    <div id="rabbit">&#128007;</div>
+    <div id="hint">type a command (try <b>help</b>) &middot; hold mouse = bullet time &middot; click = shockwave &middot; wheel = speed &middot; ESC = hide terminal</div>
+
+    <script>
+        'use strict';
+
+        // --------------------------------------------------------------------
+        //  Interactive digital rain + terminal
+        // --------------------------------------------------------------------
+        const CHARSETS = {
+            matrix: 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789Z:.="*+-<>|',
+            cnc: 'GXYZMFSTIJKRPN0123456789.-',
+            binary: '01',
+            hex: '0123456789ABCDEF',
+            latin: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*+-/'
+        };
+
+        const THEMES = {
+            green: { hue: 120, sat: 100 },
+            red: { hue: 0, sat: 100 },
+            blue: { hue: 205, sat: 100 },
+            gold: { hue: 42, sat: 100 },
+            purple: { hue: 280, sat: 100 },
+            white: { hue: 120, sat: 0 },
+            rainbow: { hue: 0, sat: 100, rainbow: true }
+        };
+
+        const S = {
+            theme: 'green',
+            charset: CHARSETS.matrix,
+            charsetName: 'matrix',
+            speed: 1,
+            timeScale: 1,
+            targetScale: 1,
+            fs: window.innerWidth < 600 ? 14 : 18
+        };
+
+        const cv = document.getElementById('rain');
+        const ctx = cv.getContext('2d');
+        let W = 0, H = 0, DPR = 1;
+        let cols = [];
+        const drops = [];      // typed / echoed glyphs
+        const rings = [];      // shockwaves & bullet-time ripples
+
+        function resize() {
+            DPR = Math.min(window.devicePixelRatio || 1, 2);
+            W = window.innerWidth;
+            H = window.innerHeight;
+            cv.width = Math.floor(W * DPR);
+            cv.height = Math.floor(H * DPR);
+            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+            initColumns();
+        }
+
+        function initColumns() {
+            const n = Math.ceil(W / S.fs);
+            cols = [];
+            for (let i = 0; i < n; i++) cols.push(newColumn(i, true));
+        }
+
+        function newColumn(i, scatter) {
+            return {
+                i,
+                y: scatter ? -Math.random() * (H / S.fs) * 1.2 : -Math.random() * 12,
+                v: 7 + Math.random() * 15,
+                last: -9999,
+                prev: ''
+            };
+        }
+
+        const randChar = () => S.charset[(Math.random() * S.charset.length) | 0];
+
+        // colors ------------------------------------------------------------
+        let headCol, trailCol, dimCol;
+        function themeColors() {
+            const t = THEMES[S.theme];
+            headCol = `hsl(${t.hue},${t.sat}%,88%)`;
+            trailCol = `hsl(${t.hue},${t.sat}%,50%)`;
+            dimCol = `hsl(${t.hue},${t.sat}%,28%)`;
+            const rgb = hslToRgb(t.hue, t.sat, 50);
+            const fg = t.sat === 0 ? '#e8ffe8' : `rgb(${rgb.join(',')})`;
+            for (const id of ['overlay', 'term']) {
+                const e = document.getElementById(id);
+                e.style.setProperty('--glow', rgb.join(','));
+                e.style.setProperty('--fg', fg);
+                e.classList.toggle('rainbow', !!t.rainbow);
+            }
+        }
+
+        function hslToRgb(h, s, l) {
+            s /= 100; l /= 100;
+            const k = n => (n + h / 30) % 12;
+            const a = s * Math.min(l, 1 - l);
+            const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+            return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+        }
+
+        function colColor(c, kind, t) {
+            if (!THEMES[S.theme].rainbow) return kind === 0 ? headCol : kind === 1 ? trailCol : dimCol;
+            const h = (c.i * 9 + t * 0.04) % 360;
+            return kind === 0 ? `hsl(${h},100%,88%)` : kind === 1 ? `hsl(${h},100%,55%)` : `hsl(${h},100%,30%)`;
+        }
+
+        // pointer -------------------------------------------------------------
+        const mouse = { x: -9999, y: -9999, active: false, down: false, t0: 0, lastRipple: 0 };
+
+        function lens(x, y) {
+            if (!mouse.active) return null;
+            const R = Math.max(90, Math.min(W, H) * 0.14);
+            const dx = x - mouse.x, dy = y - mouse.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 > R * R) return null;
+            const d = Math.sqrt(d2) + 0.001;
+            const k = 1 - d / R;
+            return { x: x + dx / d * k * R * 0.6, y: y + dy / d * k * R * 0.3, k };
+        }
+
+        function glyph(ch, x, y, color, head) {
+            const l = lens(x, y);
+            if (l) {
+                x = l.x; y = l.y;
+                if (head || l.k > 0.5) color = '#e8fff0';
+            }
+            ctx.fillStyle = color;
+            ctx.fillText(ch, x, y);
+        }
+
+        // frame -----------------------------------------------------------------
+        function update(dt, t) {
+            S.timeScale += (S.targetScale - S.timeScale) * Math.min(1, dt * 5);
+            const ts = S.timeScale * S.speed;
+
+            // trail fade (slows down with bullet time so trails linger)
+            const fade = 1 - Math.pow(1 - 0.07, dt * 60 * Math.max(0.15, S.timeScale));
+            ctx.fillStyle = `rgba(0,0,0,${fade})`;
+            ctx.fillRect(0, 0, W, H);
+
+            const fs = S.fs;
+            ctx.font = `${fs}px "MS Gothic", "Courier New", monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            const rowsOnScreen = H / fs;
+
+            for (const c of cols) {
+                c.y += c.v * dt * ts;
+                const row = Math.floor(c.y);
+                if (row === c.last) continue;
+                const x = (c.i + 0.5) * fs;
+                // repaint the previous head in trail colour, fill skipped rows
+                const from = Math.max(c.last, row - 6);
+                for (let r = from; r < row; r++) {
+                    if (r < 0) continue;
+                    const ch = r === c.last && c.prev ? c.prev : randChar();
+                    glyph(ch, x, r * fs, colColor(c, 1, t), false);
+                }
+                if (row >= 0) {
+                    const ch = randChar();
+                    glyph(ch, x, row * fs, colColor(c, 0, t), true);
+                    c.prev = ch;
+                }
+                c.last = row;
+                if (row > rowsOnScreen && Math.random() < 0.035) {
+                    Object.assign(c, newColumn(c.i, false));
+                }
+            }
+
+            // shimmering glyphs inside the trails
+            const flick = Math.max(1, (cols.length * 0.12 * S.timeScale) | 0);
+            for (let k = 0; k < flick; k++) {
+                const c = cols[(Math.random() * cols.length) | 0];
+                if (!c) break;
+                const r = c.last - 1 - ((Math.random() * 12) | 0);
+                if (r < 0) continue;
+                glyph(randChar(), (c.i + 0.5) * fs, r * fs, colColor(c, 2, t), false);
+            }
+
+            // typed / echoed glyphs
+            if (drops.length) {
+                ctx.save();
+                ctx.shadowColor = trailCol;
+                ctx.shadowBlur = 12;
+                ctx.font = `bold ${Math.round(fs * 1.25)}px "Courier New", monospace`;
+                ctx.fillStyle = '#fff';
+                for (let k = drops.length - 1; k >= 0; k--) {
+                    const d = drops[k];
+                    if (d.delay > 0) { d.delay -= dt; continue; }
+                    d.row += d.v * dt * ts;
+                    const r = Math.floor(d.row);
+                    if (r !== d.last) {
+                        d.last = r;
+                        ctx.fillText(d.ch, d.x, r * fs);
+                    }
+                    if (r * fs > H + 40) drops.splice(k, 1);
+                }
+                ctx.restore();
+            }
+
+            // bullet-time ripples
+            if (mouse.down && S.targetScale < 1 && t - mouse.lastRipple > 380) {
+                mouse.lastRipple = t;
+                rings.push({ x: mouse.x, y: mouse.y, r: 4, v: 160, life: 1, glyphs: false });
+            }
+
+            for (let k = rings.length - 1; k >= 0; k--) {
+                const r = rings[k];
+                r.r += r.v * dt;
+                r.life -= dt * (r.glyphs ? 0.9 : 0.8);
+                if (r.life <= 0) { rings.splice(k, 1); continue; }
+                if (r.glyphs) {
+                    const n = Math.max(8, Math.floor(r.r * Math.PI * 2 / (fs * 1.1)));
+                    ctx.fillStyle = `rgba(230,255,235,${r.life})`;
+                    for (let i = 0; i < n; i++) {
+                        const a = i / n * Math.PI * 2 + r.r * 0.002;
+                        ctx.fillText(randChar(), r.x + Math.cos(a) * r.r, r.y + Math.sin(a) * r.r - fs / 2);
+                    }
+                } else {
+                    ctx.strokeStyle = `rgba(160,255,190,${r.life * 0.5})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function shockwave(x, y) {
+            rings.push({ x, y, r: 6, v: Math.max(W, H) * 0.55, life: 1, glyphs: true });
+            // columns near the impact restart from the impact row -> splash
+            const R = Math.max(120, W * 0.12);
+            const row = y / S.fs;
+            for (const c of cols) {
+                const cx = (c.i + 0.5) * S.fs;
+                const dx = Math.abs(cx - x);
+                if (dx < R) {
+                    c.y = row - Math.random() * 3 * (dx / R);
+                    c.last = Math.floor(c.y) - 1;
+                    c.v = 18 + Math.random() * 22 * (1 - dx / R);
+                }
+            }
+            glitch(450);
+        }
+
+        cv.addEventListener('pointermove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+        });
+        cv.addEventListener('pointerdown', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.active = true;
+            mouse.down = true;
+            mouse.t0 = performance.now();
+            cv.setPointerCapture(e.pointerId);
+            clearTimeout(mouse.holdTimer);
+            mouse.holdTimer = setTimeout(() => { if (mouse.down) S.targetScale = 0.07; }, 170);
+        });
+        function pointerEnd(e) {
+            if (!mouse.down) return;
+            mouse.down = false;
+            clearTimeout(mouse.holdTimer);
+            S.targetScale = 1;
+            if (performance.now() - mouse.t0 < 250) shockwave(mouse.x, mouse.y);
+            if (e.pointerType !== 'mouse') mouse.active = false;
+            focusCmd();
+        }
+        cv.addEventListener('pointerup', pointerEnd);
+        cv.addEventListener('pointercancel', pointerEnd);
+        cv.addEventListener('pointerleave', () => { if (!mouse.down) mouse.active = false; });
+        cv.addEventListener('wheel', e => {
+            e.preventDefault();
+            setSpeed(S.speed * (e.deltaY < 0 ? 1.12 : 1 / 1.12), true);
+        }, { passive: false });
+
+        function setSpeed(v, quiet) {
+            S.speed = Math.max(0.1, Math.min(6, v));
+            if (!quiet) print('speed = ' + S.speed.toFixed(2) + 'x', 'dim');
+            else flashHint('speed ' + S.speed.toFixed(2) + 'x');
+        }
+
+        // glitch on the title -------------------------------------------------------
+        const overlay = document.getElementById('overlay');
+        function glitch(ms) {
+            overlay.classList.add('glitch');
+            clearTimeout(glitch.t);
+            glitch.t = setTimeout(() => overlay.classList.remove('glitch'), ms);
+        }
+        (function randomGlitch() {
+            setTimeout(() => { glitch(260 + Math.random() * 300); randomGlitch(); }, 7000 + Math.random() * 9000);
+        })();
+
+        // falling text ----------------------------------------------------------------
+        let typeX = -1, lastTypeAt = 0;
+        function dropChar(ch, x, delay = 0) {
+            if (!ch.trim()) return;
+            drops.push({ ch, x, row: -2, last: -99, v: 15 + Math.random() * 3, delay });
+        }
+
+        function dropWord(text) {
+            const step = S.fs * 1.25;
+            const w = text.length * step;
+            const x0 = Math.max(step, W / 2 - w / 2);
+            [...text].forEach((ch, i) => dropChar(ch, x0 + i * step, i * 0.03));
+        }
+
+        // terminal --------------------------------------------------------------------
+        const term = document.getElementById('term');
+        const out = document.getElementById('out');
+        const cmd = document.getElementById('cmd');
+        const history = [];
+        let histIdx = 0;
+        const printQueue = [];
+        let printing = false;
+
+        function print(text, cls) {
+            printQueue.push({ text: String(text), cls });
+            if (!printing) pump();
+        }
+
+        function pump() {
+            const item = printQueue.shift();
+            if (!item) { printing = false; return; }
+            printing = true;
+            const line = document.createElement('div');
+            if (item.cls) line.className = item.cls;
+            out.appendChild(line);
+            while (out.children.length > 40) out.removeChild(out.firstChild);
+            let i = 0;
+            const speed = item.text.length > 60 ? 3 : 1;
+            (function type() {
+                i = Math.min(item.text.length, i + speed);
+                line.textContent = item.text.slice(0, i);
+                if (i < item.text.length) setTimeout(type, 18);
+                else setTimeout(pump, item.pause || 40);
+            })();
+        }
+
+        function pause(ms) {
+            printQueue.push({ text: '', cls: 'dim', pause: ms });
+            if (!printing) pump();
+        }
+
+        function focusCmd() {
+            if (!term.classList.contains('hidden') && window.matchMedia('(pointer: fine)').matches) cmd.focus({ preventScroll: true });
+        }
+
+        term.addEventListener('pointerdown', () => setTimeout(() => cmd.focus(), 0));
+
+        let lastValue = '';
+        cmd.addEventListener('input', () => {
+            const v = cmd.value;
+            if (v.length > lastValue.length) {
+                const added = v.slice(lastValue.length);
+                const now = performance.now();
+                for (const ch of added) {
+                    if (typeX < 0 || typeX > W - S.fs || now - lastTypeAt > 1500) {
+                        typeX = mouse.active ? mouse.x : W * (0.1 + Math.random() * 0.5);
+                    }
+                    dropChar(ch, typeX);
+                    typeX += S.fs * 1.3;
+                    lastTypeAt = now;
+                }
+            }
+            lastValue = v;
+        });
+
+        cmd.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const line = cmd.value;
+                cmd.value = '';
+                lastValue = '';
+                typeX = -1;
+                run(line);
+            } else if (e.key === 'ArrowUp') {
+                if (histIdx > 0) { histIdx--; cmd.value = history[histIdx]; lastValue = cmd.value; }
+                e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                if (histIdx < history.length) { histIdx++; cmd.value = history[histIdx] || ''; lastValue = cmd.value; }
+                e.preventDefault();
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                const v = cmd.value.trim().toLowerCase();
+                const m = Object.keys(COMMANDS).filter(k => k.startsWith(v));
+                if (m.length === 1) cmd.value = lastValue = m[0] + ' ';
+                else if (m.length > 1) print(m.join('  '), 'dim');
+            }
+        });
+
+        window.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                term.classList.toggle('hidden');
+                if (!term.classList.contains('hidden')) cmd.focus();
+                return;
+            }
+            if (document.activeElement !== cmd && !term.classList.contains('hidden') && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                cmd.focus();
+            }
+        });
+
+        const PAGES = 17;
+        const COMMANDS = {
+            help: () => {
+                print('commands:', 'hi');
+                print('  colors : red blue green gold purple white rainbow');
+                print('  glyphs : matrix cnc binary hex latin');
+                print('  rain   : speed <0.1-6>  size <10-40>  echo <text>  glitch');
+                print('  misc   : time date whoami ls open <1-17> random rabbit wake clear');
+            },
+            red: () => { setTheme('red'); print('Red pill taken. Welcome to the real world.'); },
+            blue: () => { setTheme('blue'); print('Blue pill taken. Nothing to see here... or is there?'); },
+            green: () => { setTheme('green'); print('Back to the default feed.'); },
+            gold: () => { setTheme('gold'); print('Amber phosphor engaged.'); },
+            purple: () => { setTheme('purple'); print('Ultraviolet.'); },
+            white: () => { setTheme('white'); print('Monochrome.'); },
+            rainbow: () => { setTheme('rainbow'); print('Chromatic aberration detected.'); },
+            matrix: () => setCharset('matrix'),
+            cnc: () => {
+                setCharset('cnc');
+                print('G21 G90 G17 G54 ; S18000 M3 ; G0 X0. Y0. ; G1 Z-0.5 F300.', 'dim');
+            },
+            binary: () => setCharset('binary'),
+            hex: () => setCharset('hex'),
+            latin: () => setCharset('latin'),
+            speed: a => {
+                const v = parseFloat(a[0]);
+                if (isNaN(v)) print('usage: speed <0.1-6>   (current ' + S.speed.toFixed(2) + ')', 'err');
+                else setSpeed(v);
+            },
+            size: a => {
+                const v = parseInt(a[0], 10);
+                if (isNaN(v)) { print('usage: size <10-40>   (current ' + S.fs + ')', 'err'); return; }
+                S.fs = Math.max(10, Math.min(40, v));
+                resize();
+                print('glyph size = ' + S.fs + 'px', 'dim');
+            },
+            echo: a => {
+                const txt = a.join(' ');
+                if (!txt) return;
+                print(txt);
+                dropWord(txt.slice(0, 60));
+            },
+            glitch: () => { glitch(1200); shockwave(W / 2, H * 0.42); },
+            clear: () => { out.innerHTML = ''; },
+            cls: () => { out.innerHTML = ''; },
+            time: () => print(new Date().toLocaleTimeString('en-GB')),
+            date: () => print(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })),
+            whoami: () => print('guest (uid=1000) @ serkankose77.me'),
+            ls: () => {
+                const names = [];
+                for (let i = 1; i <= PAGES; i++) names.push('index' + i + '.html');
+                print(names.join('  '));
+                print("use 'open <n>' to jump, 'random' for a surprise", 'dim');
+            },
+            open: a => {
+                const n = parseInt(a[0], 10);
+                if (!(n >= 1 && n <= PAGES)) { print('usage: open <1-' + PAGES + '>', 'err'); return; }
+                print('connecting to index' + n + '.html ...', 'dim');
+                setTimeout(() => { location.href = 'index' + n + '.html'; }, 700);
+            },
+            random: () => {
+                let n;
+                do { n = 1 + ((Math.random() * PAGES) | 0); } while (n === 16);
+                COMMANDS.open([String(n)]);
+            },
+            rabbit: () => {
+                print('Follow the white rabbit.');
+                const r = document.getElementById('rabbit');
+                r.classList.remove('run');
+                void r.offsetWidth;
+                r.classList.add('run');
+            },
+            wake: () => intro(),
+            sudo: () => print('Permission denied: you are not the One (yet).', 'err'),
+            exit: () => print('There is no exit.', 'err'),
+            hello: () => print('Hello, visitor.'),
+            hi: () => print('Hello, visitor.')
+        };
+
+        function run(line) {
+            const trimmed = line.trim();
+            print('guest@serkankose77:~$ ' + trimmed, 'dim');
+            if (!trimmed) return;
+            history.push(trimmed);
+            histIdx = history.length;
+            const [name, ...args] = trimmed.split(/\s+/);
+            const fn = COMMANDS[name.toLowerCase()];
+            if (fn) fn(args);
+            else {
+                print('command not found: ' + name + "  (try 'help')", 'err');
+                dropWord(trimmed.slice(0, 40));
+                glitch(300);
+            }
+        }
+
+        function setTheme(name) {
+            S.theme = name;
+            themeColors();
+            glitch(350);
+        }
+
+        function setCharset(name) {
+            S.charset = CHARSETS[name];
+            S.charsetName = name;
+            print('glyph set = ' + name, 'dim');
+        }
+
+        function intro() {
+            print('Wake up, visitor...', 'hi');
+            pause(900);
+            print('The grid has you...');
+            pause(900);
+            print("Type 'help' and press Enter. Or just start typing.", 'dim');
+        }
+
+        // clock -----------------------------------------------------------------------
+        let lastMinute = -1;
+        function updateTime() {
+            const now = new Date();
+            const pad = n => (n < 10 ? '0' + n : '' + n);
+            const strTime = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+            const strDate = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('datetime').textContent = strDate + ' - ' + strTime;
+            if (lastMinute !== -1 && now.getMinutes() !== lastMinute) dropWord(pad(now.getHours()) + ':' + pad(now.getMinutes()));
+            lastMinute = now.getMinutes();
+        }
+
+        const hint = document.getElementById('hint');
+        let hintTimer = setTimeout(() => hint.classList.add('hidden'), 9000);
+        function flashHint(msg) {
+            hint.textContent = msg;
+            hint.classList.remove('hidden');
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(() => hint.classList.add('hidden'), 1200);
+        }
+
+        // boot --------------------------------------------------------------------------
+        resize();
+        themeColors();
+        updateTime();
+        setInterval(updateTime, 1000);
+        window.addEventListener('resize', () => {
+            clearTimeout(resize.t);
+            resize.t = setTimeout(resize, 200);
+        });
+        setTimeout(intro, 600);
+        focusCmd();
+
+        let last = performance.now();
+        function frame(now) {
+            const dt = Math.min((now - last) / 1000, 0.05);
+            last = now;
+            update(dt, now);
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    </script>
+</body>
+
+</html>
